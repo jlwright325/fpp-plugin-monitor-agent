@@ -1,0 +1,7 @@
+/dist/
+/bin/
+*.log
+*.tmp
+*.swp
+.DS_Store
+agent/fpp-monitor-agent

@@ -1,0 +1,51 @@
+name: Release Agent Binaries
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.20"
+
+      - name: Build binaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+
+          cd agent
+          CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=7 go build -o ../dist/fpp-monitor-agent-linux-armv7
+          CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o ../dist/fpp-monitor-agent-linux-arm64
+          cd ..
+
+          chmod +x dist/fpp-monitor-agent-linux-armv7 dist/fpp-monitor-agent-linux-arm64
+          (cd dist && sha256sum fpp-monitor-agent-linux-armv7 fpp-monitor-agent-linux-arm64 > checksums.txt)
+
+      - name: Create or update release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="${GITHUB_REF_NAME}"
+          if ! gh release view "$tag" >/dev/null 2>&1; then
+            gh release create "$tag" --title "$tag" --notes "Release $tag"
+          fi
+          gh release upload "$tag" \
+            dist/fpp-monitor-agent-linux-armv7 \
+            dist/fpp-monitor-agent-linux-arm64 \
+            dist/checksums.txt \
+            --clobber
