@@ -18,7 +18,9 @@ fi
 BIN_PATH="$INSTALL_DIR/fpp-monitor-agent"
 
 RELEASE_VERSION="${RELEASE_VERSION:-v0.1.0}"
-RELEASE_BASE="${RELEASE_BASE:-https://github.com/your-org/fpp-plugin-monitor-agent/releases/download/${RELEASE_VERSION}}"
+AGENT_REPO_OWNER="${AGENT_REPO_OWNER:-your-org}"
+AGENT_REPO_NAME="${AGENT_REPO_NAME:-fpp-monitor-agent-agent}"
+RELEASE_BASE="${RELEASE_BASE:-https://github.com/${AGENT_REPO_OWNER}/${AGENT_REPO_NAME}/releases/download/${RELEASE_VERSION}}"
 
 platform_arch="$($ROOT_DIR/scripts/detect_platform.sh)"
 asset_name="fpp-monitor-agent-linux-${platform_arch}"
@@ -91,14 +93,12 @@ if [[ ! -f "$CONFIG_PATH" ]]; then
   else
     cat <<'JSON' > "$CONFIG_PATH"
 {
-  "device_id": "",
-  "device_token": "",
   "api_base_url": "https://api.your-platform.example",
+  "enrollment_token": "",
   "heartbeat_interval_sec": 10,
   "command_poll_interval_sec": 5,
   "reboot_enabled": false,
-  "restart_fpp_command": "systemctl restart fppd",
-  "update_channel": "stable"
+  "restart_fpp_command": "systemctl restart fppd"
 }
 JSON
   fi
