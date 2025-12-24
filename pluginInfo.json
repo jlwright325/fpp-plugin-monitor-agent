@@ -1,12 +1,12 @@
 {
   "id": "fpp-monitor-agent",
   "name": "FPP Monitor Agent",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Lightweight outbound-only monitoring agent for FPP.",
-  "author": "Your Company",
+  "author": "Justin Wright",
   "license": "Apache-2.0",
-  "homepage": "https://github.com/your-org/fpp-plugin-monitor-agent",
-  "repo": "https://github.com/your-org/fpp-plugin-monitor-agent",
+  "homepage": "https://github.com/jlwright325/fpp-plugin-monitor-agent",
+  "repo": "https://github.com/jlwright325/fpp-plugin-monitor-agent",
   "instructions": "Install to enable the agent service and configure /home/fpp/media/config/fpp-monitor-agent.json.",
   "scripts": {
     "install": "fpp_install.sh",
