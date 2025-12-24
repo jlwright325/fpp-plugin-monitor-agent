@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-. "$ROOT_DIR/scripts/install_common.sh"
+. "$ROOT_DIR/install_common.sh"
 
 PLUGIN_DIR="/home/fpp/media/plugins/fpp-monitor-agent"
 BIN_LINK="/usr/local/bin/fpp-monitor-agent"

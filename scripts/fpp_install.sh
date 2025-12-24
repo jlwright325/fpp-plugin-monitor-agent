@@ -2,7 +2,8 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-. "$ROOT_DIR/scripts/install_common.sh"
+REPO_ROOT="$(cd "$ROOT_DIR/.." && pwd)"
+. "$ROOT_DIR/install_common.sh"
 
 PLUGIN_DIR="/home/fpp/media/plugins/fpp-monitor-agent"
 CONFIG_PATH="/home/fpp/media/config/fpp-monitor-agent.json"
@@ -26,7 +27,7 @@ else
   RELEASE_BASE="${RELEASE_BASE:-https://github.com/${AGENT_REPO_OWNER}/${AGENT_REPO_NAME}/releases/latest/download}"
 fi
 
-platform_arch="$($ROOT_DIR/scripts/detect_platform.sh)"
+platform_arch="$($ROOT_DIR/detect_platform.sh)"
 asset_name="fpp-monitor-agent-linux-${platform_arch}"
 checksums_name="checksums.txt"
 
@@ -113,7 +114,7 @@ fi
 if is_systemd; then
   log "Installing systemd service"
   if can_sudo; then
-    run_cmd_sudo install -m 0644 "$ROOT_DIR/system/fpp-monitor-agent.service" /etc/systemd/system/fpp-monitor-agent.service
+    run_cmd_sudo install -m 0644 "$REPO_ROOT/system/fpp-monitor-agent.service" /etc/systemd/system/fpp-monitor-agent.service
     run_cmd_sudo systemctl daemon-reload
     run_cmd_sudo systemctl enable fpp-monitor-agent.service
     run_cmd_sudo systemctl restart fpp-monitor-agent.service
@@ -121,13 +122,13 @@ if is_systemd; then
   else
     log "Systemd present but no sudo; using fallback runner"
     ensure_dir "$PLUGIN_DIR/system"
-    run_cmd install -m 0755 "$ROOT_DIR/system/fpp-monitor-agent.sh" "$FALLBACK_SCRIPT"
+    run_cmd install -m 0755 "$REPO_ROOT/system/fpp-monitor-agent.sh" "$FALLBACK_SCRIPT"
     run_cmd nohup "$FALLBACK_SCRIPT" >/dev/null 2>&1 &
   fi
 else
   log "Systemd not detected; installing fallback runner"
   ensure_dir "$PLUGIN_DIR/system"
-  run_cmd install -m 0755 "$ROOT_DIR/system/fpp-monitor-agent.sh" "$FALLBACK_SCRIPT"
+  run_cmd install -m 0755 "$REPO_ROOT/system/fpp-monitor-agent.sh" "$FALLBACK_SCRIPT"
   run_cmd nohup "$FALLBACK_SCRIPT" >/dev/null 2>&1 &
   if have_command crontab; then
     log "Registering fallback runner at boot via crontab"
