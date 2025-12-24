@@ -17,10 +17,14 @@ fi
 
 BIN_PATH="$INSTALL_DIR/fpp-monitor-agent"
 
-RELEASE_VERSION="${RELEASE_VERSION:-v0.1.0}"
-AGENT_REPO_OWNER="${AGENT_REPO_OWNER:-your-org}"
-AGENT_REPO_NAME="${AGENT_REPO_NAME:-fpp-monitor-agent-agent}"
-RELEASE_BASE="${RELEASE_BASE:-https://github.com/${AGENT_REPO_OWNER}/${AGENT_REPO_NAME}/releases/download/${RELEASE_VERSION}}"
+RELEASE_VERSION="${RELEASE_VERSION:-}"
+AGENT_REPO_OWNER="${AGENT_REPO_OWNER:-jlwright325}"
+AGENT_REPO_NAME="${AGENT_REPO_NAME:-fpp-agent-monitor}"
+if [[ -n "$RELEASE_VERSION" ]]; then
+  RELEASE_BASE="${RELEASE_BASE:-https://github.com/${AGENT_REPO_OWNER}/${AGENT_REPO_NAME}/releases/download/${RELEASE_VERSION}}"
+else
+  RELEASE_BASE="${RELEASE_BASE:-https://github.com/${AGENT_REPO_OWNER}/${AGENT_REPO_NAME}/releases/latest/download}"
+fi
 
 platform_arch="$($ROOT_DIR/scripts/detect_platform.sh)"
 asset_name="fpp-monitor-agent-linux-${platform_arch}"
@@ -98,7 +102,7 @@ if [[ ! -f "$CONFIG_PATH" ]]; then
   "heartbeat_interval_sec": 10,
   "command_poll_interval_sec": 5,
   "reboot_enabled": false,
-  "restart_fpp_command": "systemctl restart fppd"
+  "restart_fpp_command": "systemctl restart fppd || systemctl restart fpp || service fppd restart || true"
 }
 JSON
   fi
