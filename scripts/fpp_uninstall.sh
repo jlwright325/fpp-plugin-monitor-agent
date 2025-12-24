@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$ROOT_DIR/install_common.sh"
 
-PLUGIN_DIR="/home/fpp/media/plugins/fpp-monitor-agent"
+PLUGIN_DIR="/home/fpp/media/plugins/showops-agent"
 BIN_LINK="/usr/local/bin/fpp-monitor-agent"
 INSTALL_DIR="/opt/fpp-monitor-agent"
 BIN_PATH_SYSTEM="$INSTALL_DIR/fpp-monitor-agent"

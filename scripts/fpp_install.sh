@@ -5,7 +5,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$ROOT_DIR/.." && pwd)"
 . "$ROOT_DIR/install_common.sh"
 
-PLUGIN_DIR="/home/fpp/media/plugins/fpp-monitor-agent"
+PLUGIN_DIR="/home/fpp/media/plugins/showops-agent"
 CONFIG_PATH="/home/fpp/media/config/fpp-monitor-agent.json"
 INSTALL_DIR="/opt/fpp-monitor-agent"
 BIN_LINK="/usr/local/bin/fpp-monitor-agent"
@@ -98,7 +98,7 @@ if [[ ! -f "$CONFIG_PATH" ]]; then
   else
     cat <<'JSON' > "$CONFIG_PATH"
 {
-  "api_base_url": "https://api.your-platform.example",
+  "api_base_url": "https://api.showops.io",
   "enrollment_token": "",
   "heartbeat_interval_sec": 10,
   "command_poll_interval_sec": 5,
