@@ -1,6 +1,5 @@
 <?php
 require_once("/opt/fpp/www/common.php");
-include_once("/opt/fpp/www/header.php");
 
 $configPath = "/home/fpp/media/config/fpp-monitor-agent.json";
 $pluginDir = "/home/fpp/media/plugins/showops-agent";
@@ -309,5 +308,4 @@ $commandValue = isset($config["command_poll_interval_sec"]) ? $config["command_p
 </div>
 
 <?php
-include_once("/opt/fpp/www/footer.php");
 ?>
