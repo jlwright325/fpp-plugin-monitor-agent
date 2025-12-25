@@ -5,6 +5,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$ROOT_DIR/install_common.sh"
 
 PLUGIN_DIR="/home/fpp/media/plugins/showops-agent"
+LEGACY_PLUGIN_DIR="/home/fpp/media/plugins/fpp-monitor-agent"
 BIN_LINK="/usr/local/bin/fpp-monitor-agent"
 INSTALL_DIR="/opt/fpp-monitor-agent"
 BIN_PATH_SYSTEM="$INSTALL_DIR/fpp-monitor-agent"
@@ -33,7 +34,12 @@ else
 fi
 
 run_cmd rm -f "$BIN_PATH_PLUGIN" || true
+run_cmd rm -f "$LEGACY_PLUGIN_DIR/bin/fpp-monitor-agent" || true
 run_cmd rm -f "$FALLBACK_SCRIPT" || true
+run_cmd rm -f "$LEGACY_PLUGIN_DIR/system/fpp-monitor-agent.sh" || true
+
+run_cmd rm -rf "$PLUGIN_DIR/bin" "$PLUGIN_DIR/system" || true
+run_cmd rm -rf "$LEGACY_PLUGIN_DIR/bin" "$LEGACY_PLUGIN_DIR/system" || true
 
 if have_command crontab; then
   if is_dry_run; then
