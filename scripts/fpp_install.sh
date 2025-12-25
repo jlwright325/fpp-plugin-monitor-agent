@@ -18,10 +18,10 @@ fi
 
 BIN_PATH="$INSTALL_DIR/fpp-monitor-agent"
 
-RELEASE_VERSION="${RELEASE_VERSION:-v0.1.1}"
+RELEASE_VERSION="${RELEASE_VERSION:-}"
 AGENT_REPO_OWNER="${AGENT_REPO_OWNER:-jlwright325}"
 AGENT_REPO_NAME="${AGENT_REPO_NAME:-fpp-agent-monitor}"
-RELEASE_BASE="${RELEASE_BASE:-https://github.com/${AGENT_REPO_OWNER}/${AGENT_REPO_NAME}/releases/download/${RELEASE_VERSION}}"
+RELEASE_BASE="${RELEASE_BASE:-https://github.com/${AGENT_REPO_OWNER}/${AGENT_REPO_NAME}/releases/latest/download}"
 
 platform_arch="$($ROOT_DIR/detect_platform.sh)"
 asset_name="fpp-monitor-agent-linux-${platform_arch}"
