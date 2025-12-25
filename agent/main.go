@@ -9,12 +9,12 @@ import (
   "syscall"
   "time"
 
-  "github.com/your-org/fpp-plugin-monitor-agent/agent/internal/client"
-  "github.com/your-org/fpp-plugin-monitor-agent/agent/internal/commands"
-  "github.com/your-org/fpp-plugin-monitor-agent/agent/internal/config"
-  "github.com/your-org/fpp-plugin-monitor-agent/agent/internal/fpp"
-  "github.com/your-org/fpp-plugin-monitor-agent/agent/internal/heartbeat"
-  "github.com/your-org/fpp-plugin-monitor-agent/agent/internal/logging"
+  "github.com/jlwright325/fpp-plugin-monitor-agent/agent/internal/client"
+  "github.com/jlwright325/fpp-plugin-monitor-agent/agent/internal/commands"
+  "github.com/jlwright325/fpp-plugin-monitor-agent/agent/internal/config"
+  "github.com/jlwright325/fpp-plugin-monitor-agent/agent/internal/fpp"
+  "github.com/jlwright325/fpp-plugin-monitor-agent/agent/internal/heartbeat"
+  "github.com/jlwright325/fpp-plugin-monitor-agent/agent/internal/logging"
 )
 
 var Version = "dev"

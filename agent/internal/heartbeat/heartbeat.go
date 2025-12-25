@@ -3,7 +3,7 @@ package heartbeat
 import (
   "time"
 
-  "github.com/your-org/fpp-plugin-monitor-agent/agent/internal/fpp"
+  "github.com/jlwright325/fpp-plugin-monitor-agent/agent/internal/fpp"
 )
 
 type Payload struct {

@@ -13,8 +13,8 @@ import (
   "runtime"
   "strings"
 
-  "github.com/your-org/fpp-plugin-monitor-agent/agent/internal/client"
-  "github.com/your-org/fpp-plugin-monitor-agent/agent/internal/config"
+  "github.com/jlwright325/fpp-plugin-monitor-agent/agent/internal/client"
+  "github.com/jlwright325/fpp-plugin-monitor-agent/agent/internal/config"
 )
 
 type Manifest struct {
