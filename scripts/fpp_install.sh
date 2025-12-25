@@ -18,14 +18,10 @@ fi
 
 BIN_PATH="$INSTALL_DIR/fpp-monitor-agent"
 
-RELEASE_VERSION="${RELEASE_VERSION:-}"
+RELEASE_VERSION="${RELEASE_VERSION:-v0.1.0}"
 AGENT_REPO_OWNER="${AGENT_REPO_OWNER:-jlwright325}"
 AGENT_REPO_NAME="${AGENT_REPO_NAME:-fpp-agent-monitor}"
-if [[ -n "$RELEASE_VERSION" ]]; then
-  RELEASE_BASE="${RELEASE_BASE:-https://github.com/${AGENT_REPO_OWNER}/${AGENT_REPO_NAME}/releases/download/${RELEASE_VERSION}}"
-else
-  RELEASE_BASE="${RELEASE_BASE:-https://github.com/${AGENT_REPO_OWNER}/${AGENT_REPO_NAME}/releases/latest/download}"
-fi
+RELEASE_BASE="${RELEASE_BASE:-https://github.com/${AGENT_REPO_OWNER}/${AGENT_REPO_NAME}/releases/download/${RELEASE_VERSION}}"
 
 platform_arch="$($ROOT_DIR/detect_platform.sh)"
 asset_name="fpp-monitor-agent-linux-${platform_arch}"
@@ -45,8 +41,10 @@ tmp_bin="$tmp_dir/$asset_name"
 tmp_checksums="$tmp_dir/$checksums_name"
 
 log "Downloading release assets from $RELEASE_BASE"
+log "Resolved asset URLs: $RELEASE_BASE/$asset_name and $RELEASE_BASE/$checksums_name"
 if is_dry_run; then
-  log "DRY_RUN: would download $RELEASE_BASE/$asset_name and $RELEASE_BASE/$checksums_name"
+  log "DRY_RUN: would download $RELEASE_BASE/$asset_name"
+  log "DRY_RUN: would download $RELEASE_BASE/$checksums_name"
   log "DRY_RUN: would verify checksum and install $BIN_PATH"
   rm -rf "$tmp_dir"
 else
