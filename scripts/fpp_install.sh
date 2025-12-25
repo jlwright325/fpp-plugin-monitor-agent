@@ -46,6 +46,7 @@ if is_dry_run; then
   log "DRY_RUN: would download $RELEASE_BASE/$asset_name"
   log "DRY_RUN: would download $RELEASE_BASE/$checksums_name"
   log "DRY_RUN: would verify checksum and install $BIN_PATH"
+  log "DRY_RUN: would write version file to $INSTALL_DIR/VERSION"
   rm -rf "$tmp_dir"
 else
   if ! download_file "$RELEASE_BASE/$asset_name" "$tmp_bin"; then
@@ -79,6 +80,7 @@ else
 
   log "Installing binary to $BIN_PATH"
   run_cmd_sudo install -m 0755 "$tmp_bin" "$BIN_PATH"
+  run_cmd_sudo sh -c "echo \"$RELEASE_VERSION\" > \"$INSTALL_DIR/VERSION\""
 
   if can_sudo; then
     run_cmd sudo ln -sf "$BIN_PATH" "$BIN_LINK"

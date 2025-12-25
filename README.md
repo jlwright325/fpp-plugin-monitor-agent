@@ -28,3 +28,13 @@ Without systemd:
 ```
 ps aux | grep fpp-monitor-agent
 ```
+
+## Troubleshooting
+
+- Install failures: re-run `/home/fpp/media/plugins/showops-agent/scripts/fpp_install.sh` and check for 404 or checksum mismatch messages.
+- UI issues: verify `/fpp` loads and check Apache errors in `/home/fpp/media/logs/apache2-base-error.log`.
+
+## Agent Logs
+
+- systemd: `journalctl -u fpp-monitor-agent.service -n 200 --no-pager`
+- fallback runner: `/var/log/syslog` or `/var/log/messages` (logger tag: `fpp-monitor-agent`)

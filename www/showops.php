@@ -5,6 +5,10 @@ $configPath = "/home/fpp/media/config/fpp-monitor-agent.json";
 $pluginDir = "/home/fpp/media/plugins/showops-agent";
 $serviceName = "fpp-monitor-agent.service";
 $fallbackScript = $pluginDir . "/system/fpp-monitor-agent.sh";
+$versionPaths = array(
+  "/opt/fpp-monitor-agent/VERSION",
+  $pluginDir . "/bin/VERSION"
+);
 
 function h($value) {
   return htmlspecialchars((string)$value, ENT_QUOTES, "UTF-8");
@@ -101,6 +105,29 @@ function last_log_line($serviceName) {
   return "";
 }
 
+function detect_agent_version($paths) {
+  foreach ($paths as $path) {
+    if (file_exists($path)) {
+      $raw = trim(file_get_contents($path));
+      if ($raw !== "") {
+        return $raw;
+      }
+    }
+  }
+  return "unknown";
+}
+
+function detect_arch() {
+  $arch = php_uname("m");
+  if (strpos($arch, "armv7") !== false) {
+    return "armv7";
+  }
+  if ($arch === "aarch64" || $arch === "arm64") {
+    return "arm64";
+  }
+  return $arch !== "" ? $arch : "unknown";
+}
+
 function tail_logs($serviceName, $lines) {
   if (is_systemd()) {
     run_cmd("journalctl -u " . escapeshellarg($serviceName) . " -n " . intval($lines) . " --no-pager", $output, $code);
@@ -188,6 +215,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 $config = read_config($configPath);
 $status = service_status($serviceName);
 $lastLog = last_log_line($serviceName);
+$agentVersion = detect_agent_version($versionPaths);
+$arch = detect_arch();
 $deviceId = isset($config["device_id"]) ? $config["device_id"] : "";
 $heartbeatTs = isset($config["last_heartbeat_ts"]) ? $config["last_heartbeat_ts"] : "";
 
@@ -250,6 +279,14 @@ $commandValue = isset($config["command_poll_interval_sec"]) ? $config["command_p
       <div>
         <div class="fpp-monitor-label">Service Status</div>
         <div><?php echo h($status); ?></div>
+      </div>
+      <div>
+        <div class="fpp-monitor-label">Agent Version</div>
+        <div><?php echo h($agentVersion); ?></div>
+      </div>
+      <div>
+        <div class="fpp-monitor-label">Architecture</div>
+        <div><?php echo h($arch); ?></div>
       </div>
       <div>
         <div class="fpp-monitor-label">Last Log Line</div>

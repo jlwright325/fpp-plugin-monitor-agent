@@ -14,7 +14,7 @@ download_file() {
   local dest="$2"
 
   if have_command curl; then
-    curl -fsSL "$url" -o "$dest"
+    curl -fsSL -L "$url" -o "$dest"
   elif have_command wget; then
     wget -qO "$dest" "$url"
   else
