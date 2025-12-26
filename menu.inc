@@ -11,6 +11,12 @@ $menuEntries = Array(
     'type' => 'plugins',
     'page' => 'www/showops.php',
     'wrap' => 1
+  ),
+  Array(
+    'text' => 'ShowOps Configuration',
+    'type' => 'content',
+    'page' => 'www/showops.php',
+    'wrap' => 1
   )
 );
 
