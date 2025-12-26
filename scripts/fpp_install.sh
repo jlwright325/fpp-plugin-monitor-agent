@@ -127,6 +127,7 @@ if [[ ! -f "$CONFIG_PATH" ]]; then
   else
     cat <<'JSON' > "$CONFIG_PATH"
 {
+  "api_base_url": "https://api.showops.io",
   "enrollment_token": "",
   "heartbeat_interval_sec": 10,
   "command_poll_interval_sec": 5,

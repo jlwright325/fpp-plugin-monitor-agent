@@ -1,8 +1,19 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+LOG_FILE="${FPP_MONITOR_AGENT_LOG_FILE:-/home/fpp/media/logs/fpp-monitor-agent-install.log}"
+
 log() {
-  echo "[fpp-monitor-agent] $*"
+  local message="[fpp-monitor-agent] $*"
+  if [[ -n "$LOG_FILE" ]]; then
+    ensure_dir "$(dirname "$LOG_FILE")"
+    if have_command tee; then
+      echo "$message" | tee -a "$LOG_FILE"
+      return
+    fi
+    echo "$message" >>"$LOG_FILE" || true
+  fi
+  echo "$message"
 }
 
 have_command() {
@@ -15,6 +26,7 @@ download_file() {
   local status=""
 
   if have_command curl; then
+    log "Copy/paste to debug download: curl -fSL -o \"$dest\" \"$url\""
     status="$(curl -sSL -L -w "%{http_code}" -o "$dest" "$url" || true)"
     if [[ "$status" != "200" ]]; then
       log "Download failed (HTTP $status): $url"
@@ -22,6 +34,7 @@ download_file() {
     fi
     return 0
   elif have_command wget; then
+    log "Copy/paste to debug download: wget -O \"$dest\" \"$url\""
     status="$(wget --server-response -O "$dest" "$url" 2>&1 | awk '/^  HTTP/{code=$2} END{print code}' || true)"
     if [[ "$status" != "200" ]]; then
       log "Download failed (HTTP $status): $url"

@@ -5,6 +5,7 @@ $configPath = "/home/fpp/media/config/fpp-monitor-agent.json";
 $pluginDir = "/home/fpp/media/plugins/showops-agent";
 $serviceName = "fpp-monitor-agent.service";
 $fallbackScript = $pluginDir . "/system/fpp-monitor-agent.sh";
+$apiBaseURL = "https://api.showops.io";
 $versionPaths = array(
   "/opt/fpp-monitor-agent/VERSION",
   $pluginDir . "/bin/VERSION"
@@ -128,6 +129,19 @@ function detect_arch() {
   return $arch !== "" ? $arch : "unknown";
 }
 
+function service_installed($serviceName, $fallbackScript, $pluginDir) {
+  $systemdPath = "/etc/systemd/system/" . $serviceName;
+  $systemdLibPath = "/lib/systemd/system/" . $serviceName;
+  $binSystem = "/opt/fpp-monitor-agent/fpp-monitor-agent";
+  $binPlugin = $pluginDir . "/bin/fpp-monitor-agent";
+
+  return file_exists($systemdPath) ||
+    file_exists($systemdLibPath) ||
+    file_exists($fallbackScript) ||
+    file_exists($binSystem) ||
+    file_exists($binPlugin);
+}
+
 function tail_logs($serviceName, $lines) {
   if (is_systemd()) {
     run_cmd("journalctl -u " . escapeshellarg($serviceName) . " -n " . intval($lines) . " --no-pager", $output, $code);
@@ -179,6 +193,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     if (empty($errors)) {
       $current = read_config($configPath);
       $updated = $current;
+      $updated["api_base_url"] = $apiBaseURL;
       $updated["enrollment_token"] = $enrollmentToken;
 
       if ($heartbeatInterval !== "" && ctype_digit($heartbeatInterval)) {
@@ -209,6 +224,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 $config = read_config($configPath);
 $status = service_status($serviceName);
 $lastLog = last_log_line($serviceName);
+$installed = service_installed($serviceName, $fallbackScript, $pluginDir);
 $agentVersion = detect_agent_version($versionPaths);
 $arch = detect_arch();
 $deviceId = isset($config["device_id"]) ? $config["device_id"] : "";
@@ -272,6 +288,10 @@ $commandValue = isset($config["command_poll_interval_sec"]) ? $config["command_p
       <div>
         <div class="fpp-monitor-label">Service Status</div>
         <div><?php echo h($status); ?></div>
+      </div>
+      <div>
+        <div class="fpp-monitor-label">Service Installed</div>
+        <div><?php echo h($installed ? "yes" : "no"); ?></div>
       </div>
       <div>
         <div class="fpp-monitor-label">Agent Version</div>
