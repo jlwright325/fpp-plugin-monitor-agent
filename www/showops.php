@@ -172,19 +172,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
   $action = isset($_POST["action"]) ? $_POST["action"] : "";
 
   if ($action === "save") {
-    $apiBase = trim(isset($_POST["api_base_url"]) ? $_POST["api_base_url"] : "");
     $enrollmentToken = trim(isset($_POST["enrollment_token"]) ? $_POST["enrollment_token"] : "");
     $heartbeatInterval = trim(isset($_POST["heartbeat_interval_sec"]) ? $_POST["heartbeat_interval_sec"] : "");
     $commandInterval = trim(isset($_POST["command_poll_interval_sec"]) ? $_POST["command_poll_interval_sec"] : "");
 
-    if ($apiBase === "" || filter_var($apiBase, FILTER_VALIDATE_URL) === false) {
-      $errors[] = "API Base URL must be a valid URL.";
-    }
-
     if (empty($errors)) {
       $current = read_config($configPath);
       $updated = $current;
-      $updated["api_base_url"] = $apiBase;
       $updated["enrollment_token"] = $enrollmentToken;
 
       if ($heartbeatInterval !== "" && ctype_digit($heartbeatInterval)) {
@@ -220,7 +214,6 @@ $arch = detect_arch();
 $deviceId = isset($config["device_id"]) ? $config["device_id"] : "";
 $heartbeatTs = isset($config["last_heartbeat_ts"]) ? $config["last_heartbeat_ts"] : "";
 
-$apiBaseValue = isset($config["api_base_url"]) ? $config["api_base_url"] : "";
 $enrollmentValue = isset($config["enrollment_token"]) ? $config["enrollment_token"] : "";
 $heartbeatValue = isset($config["heartbeat_interval_sec"]) ? $config["heartbeat_interval_sec"] : "";
 $commandValue = isset($config["command_poll_interval_sec"]) ? $config["command_poll_interval_sec"] : "";
@@ -307,9 +300,6 @@ $commandValue = isset($config["command_poll_interval_sec"]) ? $config["command_p
     <h3>Enrollment</h3>
     <form method="post">
       <input type="hidden" name="action" value="save">
-      <label class="fpp-monitor-label" for="api_base_url">API Base URL</label>
-      <input class="fpp-monitor-input" type="text" id="api_base_url" name="api_base_url" value="<?php echo h($apiBaseValue); ?>" required>
-
       <label class="fpp-monitor-label" for="enrollment_token">Enrollment Token</label>
       <input class="fpp-monitor-input" type="text" id="enrollment_token" name="enrollment_token" value="<?php echo h($enrollmentValue); ?>">
       <small>Leave blank to clear. Enrollment tokens are one-time use.</small>

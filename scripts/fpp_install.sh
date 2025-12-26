@@ -18,7 +18,7 @@ fi
 
 BIN_PATH="$INSTALL_DIR/fpp-monitor-agent"
 
-DEFAULT_RELEASE_VERSION="v0.1.2"
+DEFAULT_RELEASE_VERSION="v0.1.3"
 RELEASE_VERSION="${RELEASE_VERSION:-}"
 AGENT_REPO_OWNER="${AGENT_REPO_OWNER:-jlwright325}"
 AGENT_REPO_NAME="${AGENT_REPO_NAME:-fpp-agent-monitor}"
@@ -127,7 +127,6 @@ if [[ ! -f "$CONFIG_PATH" ]]; then
   else
     cat <<'JSON' > "$CONFIG_PATH"
 {
-  "api_base_url": "https://api.showops.io",
   "enrollment_token": "",
   "heartbeat_interval_sec": 10,
   "command_poll_interval_sec": 5,

@@ -9,6 +9,7 @@ import (
 )
 
 const DefaultPath = "/home/fpp/media/config/fpp-monitor-agent.json"
+const apiBaseURL = "https://api.showops.io"
 
 // Config defines runtime settings for the agent.
 type Config struct {
@@ -41,9 +42,7 @@ func Load() (*Config, error) {
 }
 
 func applyDefaults(cfg *Config) {
-  if cfg.ApiBaseURL == "" {
-    cfg.ApiBaseURL = "https://api.your-platform.example"
-  }
+  cfg.ApiBaseURL = apiBaseURL
   if cfg.HeartbeatIntervalSec <= 0 {
     cfg.HeartbeatIntervalSec = 10
   }
@@ -61,7 +60,6 @@ func applyDefaults(cfg *Config) {
 func applyEnvOverrides(cfg *Config) {
   setString(&cfg.DeviceID, "FPP_MONITOR_AGENT_DEVICE_ID")
   setString(&cfg.DeviceToken, "FPP_MONITOR_AGENT_DEVICE_TOKEN")
-  setString(&cfg.ApiBaseURL, "FPP_MONITOR_AGENT_API_BASE_URL")
   setString(&cfg.RestartFPPCommand, "FPP_MONITOR_AGENT_RESTART_FPP_COMMAND")
   setString(&cfg.UpdateChannel, "FPP_MONITOR_AGENT_UPDATE_CHANNEL")
   setString(&cfg.UpdateBaseURL, "FPP_MONITOR_AGENT_UPDATE_BASE_URL")

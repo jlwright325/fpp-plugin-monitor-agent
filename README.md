@@ -13,7 +13,7 @@ The installer fetches the agent binary from GitHub Releases:
 
 ## Configure in FPP UI
 
-In FPP, go to **Content Setup → Plugins → ShowOps Configuration**. Set your enrollment token and API base URL, then click **Save + Restart**. Enrollment tokens are one-time use and will be cleared by the agent after enrollment.
+In FPP, go to **Content Setup → Plugins → ShowOps Configuration**. Set your enrollment token, then click **Save + Restart**. Enrollment tokens are one-time use and will be cleared by the agent after enrollment.
 
 Config file path: `/home/fpp/media/config/fpp-monitor-agent.json`
 
