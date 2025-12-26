@@ -24,14 +24,25 @@ AGENT_REPO_OWNER="${AGENT_REPO_OWNER:-jlwright325}"
 AGENT_REPO_NAME="${AGENT_REPO_NAME:-fpp-agent-monitor}"
 
 resolve_latest_tag() {
-  local url="https://api.github.com/repos/${AGENT_REPO_OWNER}/${AGENT_REPO_NAME}/releases/latest"
+  local manifest_url="https://raw.githubusercontent.com/jlwright325/fpp-agent-monitor/main/latest.json"
+  local api_url="https://api.github.com/repos/${AGENT_REPO_OWNER}/${AGENT_REPO_NAME}/releases/latest"
   local body=""
   local tmp=""
 
   tmp="$(mktemp)"
-  if ! download_file "$url" "$tmp" 1>&2; then
+  if download_file "$manifest_url" "$tmp" 1>&2; then
+    body="$(cat "$tmp")"
     rm -f "$tmp"
-    log "Failed to resolve latest tag from $url" >&2
+    echo "$body" | sed -n 's/.*"version"[[:space:]]*:[[:space:]]*"\\([^"]*\\)".*/\\1/p' | head -n 1
+    return 0
+  fi
+  rm -f "$tmp"
+  log "Failed to resolve latest tag from $manifest_url" >&2
+
+  tmp="$(mktemp)"
+  if ! download_file "$api_url" "$tmp" 1>&2; then
+    rm -f "$tmp"
+    log "Failed to resolve latest tag from $api_url" >&2
     return 1
   fi
   body="$(cat "$tmp")"
