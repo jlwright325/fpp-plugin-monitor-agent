@@ -165,11 +165,15 @@ function tail_logs($serviceName, $lines) {
 
 function restart_agent($serviceName, $fallbackScript, &$messages, &$errors) {
   if (is_systemd()) {
-    run_cmd("sudo systemctl restart " . escapeshellarg($serviceName), $output, $code);
+    run_cmd("sudo systemctl restart " . escapeshellarg($serviceName) . " 2>&1", $output, $code);
     if ($code === 0) {
       $messages[] = "Agent restarted via systemd.";
     } else {
-      $errors[] = "Failed to restart via systemd.";
+      $detail = trim(implode("\n", $output));
+      if ($detail === "") {
+        $detail = "systemctl restart exited with code " . $code . ".";
+      }
+      $errors[] = "Failed to restart via systemd: " . $detail;
     }
     return;
   }
@@ -187,21 +191,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
   if ($action === "save") {
     $enrollmentToken = trim(isset($_POST["enrollment_token"]) ? $_POST["enrollment_token"] : "");
-    $heartbeatInterval = trim(isset($_POST["heartbeat_interval_sec"]) ? $_POST["heartbeat_interval_sec"] : "");
-    $commandInterval = trim(isset($_POST["command_poll_interval_sec"]) ? $_POST["command_poll_interval_sec"] : "");
-
     if (empty($errors)) {
       $current = read_config($configPath);
       $updated = $current;
       $updated["api_base_url"] = $apiBaseURL;
       $updated["enrollment_token"] = $enrollmentToken;
-
-      if ($heartbeatInterval !== "" && ctype_digit($heartbeatInterval)) {
-        $updated["heartbeat_interval_sec"] = intval($heartbeatInterval);
-      }
-      if ($commandInterval !== "" && ctype_digit($commandInterval)) {
-        $updated["command_poll_interval_sec"] = intval($commandInterval);
-      }
 
       $error = "";
       if (write_config_atomic($configPath, $updated, $error)) {
@@ -229,10 +223,10 @@ $agentVersion = detect_agent_version($versionPaths);
 $arch = detect_arch();
 $deviceId = isset($config["device_id"]) ? $config["device_id"] : "";
 $heartbeatTs = isset($config["last_heartbeat_ts"]) ? $config["last_heartbeat_ts"] : "";
+$enrolled = $deviceId !== "";
+$running = ($status === "active" || $status === "running");
 
 $enrollmentValue = isset($config["enrollment_token"]) ? $config["enrollment_token"] : "";
-$heartbeatValue = isset($config["heartbeat_interval_sec"]) ? $config["heartbeat_interval_sec"] : "";
-$commandValue = isset($config["command_poll_interval_sec"]) ? $config["command_poll_interval_sec"] : "";
 ?>
 
 <style>
@@ -294,6 +288,14 @@ $commandValue = isset($config["command_poll_interval_sec"]) ? $config["command_p
         <div><?php echo h($installed ? "yes" : "no"); ?></div>
       </div>
       <div>
+        <div class="fpp-monitor-label">Agent Running</div>
+        <div><?php echo h($running ? "running" : "stopped"); ?></div>
+      </div>
+      <div>
+        <div class="fpp-monitor-label">Enrollment Status</div>
+        <div><?php echo h($enrolled ? "enrolled" : "not enrolled"); ?></div>
+      </div>
+      <div>
         <div class="fpp-monitor-label">Agent Version</div>
         <div><?php echo h($agentVersion); ?></div>
       </div>
@@ -323,17 +325,6 @@ $commandValue = isset($config["command_poll_interval_sec"]) ? $config["command_p
       <label class="fpp-monitor-label" for="enrollment_token">Enrollment Token</label>
       <input class="fpp-monitor-input" type="text" id="enrollment_token" name="enrollment_token" value="<?php echo h($enrollmentValue); ?>">
       <small>Leave blank to clear. Enrollment tokens are one-time use.</small>
-
-      <div class="fpp-monitor-grid" style="margin-top: 12px;">
-        <div>
-          <label class="fpp-monitor-label" for="heartbeat_interval_sec">Heartbeat Interval (sec)</label>
-          <input class="fpp-monitor-input" type="number" min="1" id="heartbeat_interval_sec" name="heartbeat_interval_sec" value="<?php echo h($heartbeatValue); ?>">
-        </div>
-        <div>
-          <label class="fpp-monitor-label" for="command_poll_interval_sec">Command Poll Interval (sec)</label>
-          <input class="fpp-monitor-input" type="number" min="1" id="command_poll_interval_sec" name="command_poll_interval_sec" value="<?php echo h($commandValue); ?>">
-        </div>
-      </div>
 
       <div class="fpp-monitor-actions" style="margin-top: 12px;">
         <button class="btn btn-primary" type="submit">Save + Restart</button>
