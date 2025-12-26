@@ -140,6 +140,17 @@ else
   log "Config exists; leaving $CONFIG_PATH unchanged"
 fi
 
+if is_dry_run; then
+  log "DRY_RUN: would ensure $CONFIG_PATH is writable by fpp"
+else
+  if can_sudo; then
+    run_cmd_sudo chown fpp:fpp "$CONFIG_PATH" || true
+    run_cmd_sudo chmod 664 "$CONFIG_PATH" || true
+  else
+    run_cmd chmod 664 "$CONFIG_PATH" || true
+  fi
+fi
+
 if is_systemd; then
   log "Installing systemd service"
   if can_sudo; then
