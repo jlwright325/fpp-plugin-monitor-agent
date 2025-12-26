@@ -33,10 +33,17 @@ type Runner struct {
   client  *client.Client
   log     *logging.Logger
   version string
+  skipCompletion map[string]bool
 }
 
 func NewRunner(cfg *config.Config, client *client.Client, log *logging.Logger, version string) *Runner {
-  return &Runner{cfg: cfg, client: client, log: log, version: version}
+  return &Runner{
+    cfg:            cfg,
+    client:         client,
+    log:            log,
+    version:        version,
+    skipCompletion: make(map[string]bool),
+  }
 }
 
 func (r *Runner) PollAndExecute(ctx context.Context) {
@@ -58,13 +65,15 @@ func (r *Runner) PollAndExecute(ctx context.Context) {
     return
   }
 
-  var cmds []Command
-  if err := json.Unmarshal(body, &cmds); err != nil {
+  var payload struct {
+    Commands []Command `json:"commands"`
+  }
+  if err := json.Unmarshal(body, &payload); err != nil {
     r.log.Error("command decode failed", map[string]any{"error": err.Error()})
     return
   }
 
-  for _, cmd := range cmds {
+  for _, cmd := range payload.Commands {
     r.executeOne(ctx, cmd)
   }
 }
@@ -78,12 +87,25 @@ func (r *Runner) executeOne(ctx context.Context, cmd Command) {
 }
 
 func (r *Runner) complete(ctx context.Context, id string, res Result) {
+  if r.skipCompletion[id] {
+    return
+  }
+
   url := fmt.Sprintf("%s/v1/agent/commands/%s/complete", strings.TrimRight(r.cfg.ApiBaseURL, "/"), id)
   headers := map[string]string{"Authorization": "Bearer " + r.cfg.DeviceToken}
 
-  _, _, err := r.client.DoJSONWithRetry(ctx, "POST", url, headers, res)
+  resp, _, err := r.client.DoJSONWithRetry(ctx, "POST", url, headers, res)
   if err != nil {
     r.log.Error("command completion failed", map[string]any{"error": err.Error()})
+    return
+  }
+  if resp != nil && resp.StatusCode == 404 {
+    r.log.Info("command completion ignored (not supported)", map[string]any{"command_id": id})
+    r.skipCompletion[id] = true
+    return
+  }
+  if resp != nil && resp.StatusCode >= 300 {
+    r.log.Error("command completion non-200", map[string]any{"status": resp.StatusCode})
   }
 }
 
