@@ -5,6 +5,12 @@ $menuEntries = Array(
     'type' => 'plugin',
     'page' => 'www/showops.php',
     'wrap' => 1
+  ),
+  Array(
+    'text' => 'ShowOps Configuration',
+    'type' => 'plugins',
+    'page' => 'www/showops.php',
+    'wrap' => 1
   )
 );
 
