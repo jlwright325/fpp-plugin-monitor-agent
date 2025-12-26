@@ -29,9 +29,9 @@ resolve_latest_tag() {
   local tmp=""
 
   tmp="$(mktemp)"
-  if ! download_file "$url" "$tmp"; then
+  if ! download_file "$url" "$tmp" 1>&2; then
     rm -f "$tmp"
-    log "Failed to resolve latest tag from $url"
+    log "Failed to resolve latest tag from $url" >&2
     return 1
   fi
   body="$(cat "$tmp")"
