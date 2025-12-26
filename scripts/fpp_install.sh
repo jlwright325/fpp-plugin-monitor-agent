@@ -33,8 +33,11 @@ resolve_latest_tag() {
   if download_file "$manifest_url" "$tmp" 1>&2; then
     body="$(cat "$tmp")"
     rm -f "$tmp"
-    echo "$body" | sed -n 's/.*"version"[[:space:]]*:[[:space:]]*"\\([^"]*\\)".*/\\1/p' | head -n 1
-    return 0
+    version="$(echo "$body" | sed -n 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -n 1)"
+    if [[ -n "$version" ]]; then
+      echo "$version"
+      return 0
+    fi
   fi
   rm -f "$tmp"
   log "Failed to resolve latest tag from $manifest_url" >&2
@@ -48,7 +51,12 @@ resolve_latest_tag() {
   body="$(cat "$tmp")"
   rm -f "$tmp"
 
-  echo "$body" | sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"\\([^"]*\\)".*/\\1/p' | head -n 1
+  tag="$(echo "$body" | sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -n 1)"
+  if [[ -n "$tag" ]]; then
+    echo "$tag"
+    return 0
+  fi
+  return 1
 }
 
 RESOLVED_TAG="$RELEASE_VERSION"
