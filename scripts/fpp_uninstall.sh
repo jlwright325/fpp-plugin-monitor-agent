@@ -12,6 +12,7 @@ BIN_PATH_SYSTEM="$INSTALL_DIR/fpp-monitor-agent"
 BIN_PATH_PLUGIN="$PLUGIN_DIR/bin/fpp-monitor-agent"
 FALLBACK_SCRIPT="$PLUGIN_DIR/system/fpp-monitor-agent.sh"
 CONFIG_PATH="/home/fpp/media/config/fpp-monitor-agent.json"
+KEEP_CONFIG="${KEEP_CONFIG:-0}"
 
 if is_systemd; then
   if can_sudo; then
@@ -53,7 +54,25 @@ if [[ "${PURGE:-0}" == "1" ]]; then
   log "PURGE=1 set; removing config"
   run_cmd rm -f "$CONFIG_PATH"
   log "Uninstall complete (config removed)"
-else
-  log "Config retained at $CONFIG_PATH"
+elif [[ "$KEEP_CONFIG" == "1" ]]; then
+  log "KEEP_CONFIG=1 set; retaining config at $CONFIG_PATH"
   log "Uninstall complete (config retained)"
+else
+  log "Clearing enrollment fields in $CONFIG_PATH"
+  if [[ -f "$CONFIG_PATH" ]]; then
+    if is_dry_run; then
+      log "DRY_RUN: would clear enrollment_token/device_id/device_token"
+    else
+      cat <<'JSON' > "$CONFIG_PATH"
+{
+  "enrollment_token": "",
+  "device_id": "",
+  "device_token": ""
+}
+JSON
+    fi
+  else
+    log "Config not found; nothing to clear"
+  fi
+  log "Uninstall complete (enrollment cleared)"
 fi
