@@ -12,11 +12,22 @@ have_command() {
 download_file() {
   local url="$1"
   local dest="$2"
+  local status=""
 
   if have_command curl; then
-    curl -fsSL -L "$url" -o "$dest"
+    status="$(curl -sSL -L -w "%{http_code}" -o "$dest" "$url" || true)"
+    if [[ "$status" != "200" ]]; then
+      log "Download failed (HTTP $status): $url"
+      return 1
+    fi
+    return 0
   elif have_command wget; then
-    wget -qO "$dest" "$url"
+    status="$(wget --server-response -O "$dest" "$url" 2>&1 | awk '/^  HTTP/{code=$2} END{print code}' || true)"
+    if [[ "$status" != "200" ]]; then
+      log "Download failed (HTTP $status): $url"
+      return 1
+    fi
+    return 0
   else
     log "Neither curl nor wget found."
     return 1

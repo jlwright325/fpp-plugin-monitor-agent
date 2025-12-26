@@ -18,10 +18,39 @@ fi
 
 BIN_PATH="$INSTALL_DIR/fpp-monitor-agent"
 
+DEFAULT_RELEASE_VERSION="v0.1.0"
 RELEASE_VERSION="${RELEASE_VERSION:-}"
 AGENT_REPO_OWNER="${AGENT_REPO_OWNER:-jlwright325}"
 AGENT_REPO_NAME="${AGENT_REPO_NAME:-fpp-agent-monitor}"
-RELEASE_BASE="${RELEASE_BASE:-https://github.com/${AGENT_REPO_OWNER}/${AGENT_REPO_NAME}/releases/latest/download}"
+
+resolve_latest_tag() {
+  local url="https://api.github.com/repos/${AGENT_REPO_OWNER}/${AGENT_REPO_NAME}/releases/latest"
+  local body=""
+
+  if have_command curl; then
+    body="$(curl -fsSL -L "$url" || true)"
+  elif have_command wget; then
+    body="$(wget -qO- "$url" || true)"
+  else
+    log "Neither curl nor wget found for tag resolution."
+    return 1
+  fi
+
+  echo "$body" | sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"\\([^"]*\\)".*/\\1/p' | head -n 1
+}
+
+RESOLVED_TAG="$RELEASE_VERSION"
+if [[ -z "$RESOLVED_TAG" ]]; then
+  RESOLVED_TAG="$(resolve_latest_tag || true)"
+  if [[ -z "$RESOLVED_TAG" ]]; then
+    RESOLVED_TAG="$DEFAULT_RELEASE_VERSION"
+    log "Failed to resolve latest tag; falling back to $RESOLVED_TAG"
+  else
+    log "Resolved latest tag: $RESOLVED_TAG"
+  fi
+fi
+
+RELEASE_BASE="${RELEASE_BASE:-https://github.com/${AGENT_REPO_OWNER}/${AGENT_REPO_NAME}/releases/download/${RESOLVED_TAG}}"
 
 platform_arch="$($ROOT_DIR/detect_platform.sh)"
 asset_name="fpp-monitor-agent-linux-${platform_arch}"
@@ -80,7 +109,7 @@ else
 
   log "Installing binary to $BIN_PATH"
   run_cmd_sudo install -m 0755 "$tmp_bin" "$BIN_PATH"
-  run_cmd_sudo sh -c "echo \"$RELEASE_VERSION\" > \"$INSTALL_DIR/VERSION\""
+  run_cmd_sudo sh -c "echo \"$RESOLVED_TAG\" > \"$INSTALL_DIR/VERSION\""
 
   if can_sudo; then
     run_cmd sudo ln -sf "$BIN_PATH" "$BIN_LINK"
@@ -117,8 +146,14 @@ if is_systemd; then
     run_cmd_sudo install -m 0644 "$REPO_ROOT/system/fpp-monitor-agent.service" /etc/systemd/system/fpp-monitor-agent.service
     run_cmd_sudo systemctl daemon-reload
     run_cmd_sudo systemctl enable fpp-monitor-agent.service
-    run_cmd_sudo systemctl restart fpp-monitor-agent.service
-    run_cmd_sudo systemctl --no-pager --full status fpp-monitor-agent.service || true
+    if run_cmd_sudo systemctl restart fpp-monitor-agent.service; then
+      run_cmd_sudo systemctl --no-pager --full status fpp-monitor-agent.service || true
+    else
+      log "Systemd restart failed; falling back to runner"
+      ensure_dir "$PLUGIN_DIR/system"
+      run_cmd install -m 0755 "$REPO_ROOT/system/fpp-monitor-agent.sh" "$FALLBACK_SCRIPT"
+      run_cmd nohup "$FALLBACK_SCRIPT" >/dev/null 2>&1 &
+    fi
   else
     log "Systemd present but no sudo; using fallback runner"
     ensure_dir "$PLUGIN_DIR/system"

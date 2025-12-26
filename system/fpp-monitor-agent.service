@@ -7,7 +7,7 @@ Wants=network-online.target
 Type=simple
 User=fpp
 Group=fpp
-ExecStart=/usr/local/bin/fpp-monitor-agent
+ExecStart=/opt/fpp-monitor-agent/fpp-monitor-agent
 Restart=always
 RestartSec=5
 Environment=FPP_MONITOR_AGENT_CONFIG=/home/fpp/media/config/fpp-monitor-agent.json
