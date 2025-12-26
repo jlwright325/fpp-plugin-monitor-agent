@@ -86,6 +86,14 @@ run_cmd() {
   "$@"
 }
 
+run_cmd_capture() {
+  if is_dry_run; then
+    log "DRY_RUN: $*"
+    return 0
+  fi
+  "$@" 2>&1
+}
+
 run_cmd_sudo() {
   if can_sudo; then
     run_cmd sudo "$@"

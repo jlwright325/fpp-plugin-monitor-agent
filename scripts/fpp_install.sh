@@ -26,15 +26,16 @@ AGENT_REPO_NAME="${AGENT_REPO_NAME:-fpp-agent-monitor}"
 resolve_latest_tag() {
   local url="https://api.github.com/repos/${AGENT_REPO_OWNER}/${AGENT_REPO_NAME}/releases/latest"
   local body=""
+  local tmp=""
 
-  if have_command curl; then
-    body="$(curl -fsSL -L "$url" || true)"
-  elif have_command wget; then
-    body="$(wget -qO- "$url" || true)"
-  else
-    log "Neither curl nor wget found for tag resolution."
+  tmp="$(mktemp)"
+  if ! download_file "$url" "$tmp"; then
+    rm -f "$tmp"
+    log "Failed to resolve latest tag from $url"
     return 1
   fi
+  body="$(cat "$tmp")"
+  rm -f "$tmp"
 
   echo "$body" | sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"\\([^"]*\\)".*/\\1/p' | head -n 1
 }
@@ -127,7 +128,6 @@ if [[ ! -f "$CONFIG_PATH" ]]; then
   else
     cat <<'JSON' > "$CONFIG_PATH"
 {
-  "api_base_url": "https://api.showops.io",
   "enrollment_token": "",
   "heartbeat_interval_sec": 10,
   "command_poll_interval_sec": 5,
@@ -146,10 +146,17 @@ if is_systemd; then
     run_cmd_sudo install -m 0644 "$REPO_ROOT/system/fpp-monitor-agent.service" /etc/systemd/system/fpp-monitor-agent.service
     run_cmd_sudo systemctl daemon-reload
     run_cmd_sudo systemctl enable fpp-monitor-agent.service
-    if run_cmd_sudo systemctl restart fpp-monitor-agent.service; then
+    restart_output="$(run_cmd_capture sudo systemctl restart fpp-monitor-agent.service)"
+    restart_code=$?
+    if [[ $restart_code -eq 0 ]]; then
       run_cmd_sudo systemctl --no-pager --full status fpp-monitor-agent.service || true
     else
-      log "Systemd restart failed; falling back to runner"
+      if [[ -n "$restart_output" ]]; then
+        log "Systemd restart failed: $restart_output"
+      else
+        log "Systemd restart failed with exit code $restart_code"
+      fi
+      log "Falling back to runner"
       ensure_dir "$PLUGIN_DIR/system"
       run_cmd install -m 0755 "$REPO_ROOT/system/fpp-monitor-agent.sh" "$FALLBACK_SCRIPT"
       run_cmd nohup "$FALLBACK_SCRIPT" >/dev/null 2>&1 &

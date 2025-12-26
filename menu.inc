@@ -2,7 +2,7 @@
 $menuEntries = Array(
   Array(
     'text' => 'ShowOps Configuration',
-    'type' => 'content',
+    'type' => 'plugin',
     'page' => 'www/showops.php',
     'wrap' => 1
   )

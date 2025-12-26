@@ -9,13 +9,17 @@ Paste this URL into the FPP Plugin Manager:
 `https://raw.githubusercontent.com/jlwright325/fpp-plugin-monitor-agent/main/pluginInfo.json`
 
 The installer fetches the agent binary from GitHub Releases:
-`https://github.com/jlwright325/fpp-agent-monitor/releases/latest/download/`
+`https://github.com/jlwright325/fpp-agent-monitor/releases/download/<tag>/`
 
 ## Configure in FPP UI
 
 In FPP, go to **Content Setup → Plugins → ShowOps Configuration**. Set your enrollment token, then click **Save + Restart**. Enrollment tokens are one-time use and will be cleared by the agent after enrollment.
 
 Config file path: `/home/fpp/media/config/fpp-monitor-agent.json`
+
+## API Base URL
+
+The agent defaults to `https://api.showops.io` internally. The plugin does not expose this in the UI or config file. For development only, override via `SHOWOPS_API_BASE_URL` in the agent environment.
 
 ## Verify Agent Status
 

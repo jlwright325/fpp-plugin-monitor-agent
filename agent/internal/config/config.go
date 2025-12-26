@@ -36,8 +36,8 @@ func Load() (*Config, error) {
     _ = json.Unmarshal(b, cfg)
   }
 
-  applyEnvOverrides(cfg)
   applyDefaults(cfg)
+  applyEnvOverrides(cfg)
   return cfg, nil
 }
 
@@ -63,6 +63,7 @@ func applyEnvOverrides(cfg *Config) {
   setString(&cfg.RestartFPPCommand, "FPP_MONITOR_AGENT_RESTART_FPP_COMMAND")
   setString(&cfg.UpdateChannel, "FPP_MONITOR_AGENT_UPDATE_CHANNEL")
   setString(&cfg.UpdateBaseURL, "FPP_MONITOR_AGENT_UPDATE_BASE_URL")
+  setString(&cfg.ApiBaseURL, "SHOWOPS_API_BASE_URL")
 
   setInt(&cfg.HeartbeatIntervalSec, "FPP_MONITOR_AGENT_HEARTBEAT_INTERVAL_SEC")
   setInt(&cfg.CommandPollIntervalSec, "FPP_MONITOR_AGENT_COMMAND_POLL_INTERVAL_SEC")

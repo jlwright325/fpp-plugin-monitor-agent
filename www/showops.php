@@ -5,7 +5,6 @@ $configPath = "/home/fpp/media/config/fpp-monitor-agent.json";
 $pluginDir = "/home/fpp/media/plugins/showops-agent";
 $serviceName = "fpp-monitor-agent.service";
 $fallbackScript = $pluginDir . "/system/fpp-monitor-agent.sh";
-$apiBaseURL = "https://api.showops.io";
 $versionPaths = array(
   "/opt/fpp-monitor-agent/VERSION",
   $pluginDir . "/bin/VERSION"
@@ -194,12 +193,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     if (empty($errors)) {
       $current = read_config($configPath);
       $updated = $current;
-      $updated["api_base_url"] = $apiBaseURL;
+      if (isset($updated["api_base_url"])) {
+        unset($updated["api_base_url"]);
+      }
       $updated["enrollment_token"] = $enrollmentToken;
 
       $error = "";
       if (write_config_atomic($configPath, $updated, $error)) {
-        $messages[] = "Configuration saved.";
+        $messages[] = "Configuration updated.";
         if ($enrollmentToken === "") {
           $messages[] = "Enrollment token is empty; device will not enroll until it is set.";
         }
@@ -211,7 +212,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
   } elseif ($action === "restart") {
     restart_agent($serviceName, $fallbackScript, $messages, $errors);
   } elseif ($action === "tail") {
-    $logs = tail_logs($serviceName, 200);
+    $logs = tail_logs($serviceName, 50);
   }
 }
 
@@ -225,22 +226,48 @@ $deviceId = isset($config["device_id"]) ? $config["device_id"] : "";
 $heartbeatTs = isset($config["last_heartbeat_ts"]) ? $config["last_heartbeat_ts"] : "";
 $enrolled = $deviceId !== "";
 $running = ($status === "active" || $status === "running");
+$logs = tail_logs($serviceName, 50);
 
 $enrollmentValue = isset($config["enrollment_token"]) ? $config["enrollment_token"] : "";
 ?>
 
 <style>
+:root {
+  --fpp-bg: #0c1116;
+  --fpp-panel: #161d24;
+  --fpp-panel-2: #1f2933;
+  --fpp-border: #2b3947;
+  --fpp-accent: #2fd6c9;
+  --fpp-accent-2: #f9a826;
+  --fpp-text: #e6f0f4;
+  --fpp-muted: #98a7b5;
+}
+.fpp-monitor-page {
+  background: radial-gradient(circle at top right, rgba(47, 214, 201, 0.12), transparent 45%),
+    radial-gradient(circle at bottom left, rgba(249, 168, 38, 0.12), transparent 50%),
+    var(--fpp-bg);
+  color: var(--fpp-text);
+  padding: 18px;
+  border-radius: 12px;
+}
+.fpp-monitor-title {
+  font-family: "Avenir Next", "Montserrat", "Trebuchet MS", sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+}
 .fpp-monitor-card {
-  border: 1px solid #d9d9d9;
-  border-radius: 6px;
+  border: 1px solid var(--fpp-border);
+  border-radius: 12px;
   padding: 16px;
   margin-bottom: 16px;
-  background: #fff;
+  background: linear-gradient(160deg, rgba(31, 41, 51, 0.9), rgba(22, 29, 36, 0.95));
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
 }
 .fpp-monitor-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
 }
 .fpp-monitor-actions {
   display: flex;
@@ -251,23 +278,55 @@ $enrollmentValue = isset($config["enrollment_token"]) ? $config["enrollment_toke
   font-weight: 600;
   margin-bottom: 4px;
   display: block;
+  color: var(--fpp-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.72rem;
+}
+.fpp-monitor-value {
+  font-size: 1rem;
+  font-weight: 600;
 }
 .fpp-monitor-input {
   width: 100%;
-  padding: 8px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--fpp-border);
+  background: var(--fpp-panel-2);
+  color: var(--fpp-text);
+}
+.fpp-monitor-input:focus {
+  outline: 2px solid rgba(47, 214, 201, 0.45);
 }
 .fpp-monitor-pre {
   max-height: 380px;
   overflow: auto;
-  background: #111;
-  color: #eee;
+  background: #0b0f14;
+  color: #d9e4ea;
   padding: 12px;
-  border-radius: 6px;
+  border-radius: 10px;
+  border: 1px solid var(--fpp-border);
+  font-size: 0.85rem;
+}
+.fpp-monitor-meta {
+  color: var(--fpp-muted);
+  margin-top: 6px;
+}
+.fpp-monitor-actions .btn-primary {
+  background: var(--fpp-accent);
+  border: 1px solid var(--fpp-accent);
+  color: #0a1117;
+  font-weight: 700;
+}
+.fpp-monitor-actions .btn-secondary {
+  background: transparent;
+  border: 1px solid var(--fpp-border);
+  color: var(--fpp-text);
 }
 </style>
 
-<div class="container-fluid">
-  <h2>ShowOps Configuration</h2>
+<div class="container-fluid fpp-monitor-page">
+  <h2 class="fpp-monitor-title">ShowOps Configuration</h2>
 
   <?php foreach ($messages as $msg): ?>
     <div class="alert alert-success"><?php echo h($msg); ?></div>
@@ -280,40 +339,40 @@ $enrollmentValue = isset($config["enrollment_token"]) ? $config["enrollment_toke
     <h3>Connection Status</h3>
     <div class="fpp-monitor-grid">
       <div>
-        <div class="fpp-monitor-label">Service Status</div>
-        <div><?php echo h($status); ?></div>
-      </div>
-      <div>
-        <div class="fpp-monitor-label">Service Installed</div>
-        <div><?php echo h($installed ? "yes" : "no"); ?></div>
+        <div class="fpp-monitor-label">Installed</div>
+        <div class="fpp-monitor-value"><?php echo h($installed ? "yes" : "no"); ?></div>
       </div>
       <div>
         <div class="fpp-monitor-label">Agent Running</div>
-        <div><?php echo h($running ? "running" : "stopped"); ?></div>
+        <div class="fpp-monitor-value"><?php echo h($running ? "running" : "stopped"); ?></div>
       </div>
       <div>
-        <div class="fpp-monitor-label">Enrollment Status</div>
-        <div><?php echo h($enrolled ? "enrolled" : "not enrolled"); ?></div>
+        <div class="fpp-monitor-label">Enrollment</div>
+        <div class="fpp-monitor-value"><?php echo h($enrolled ? "enrolled" : "not enrolled"); ?></div>
+      </div>
+      <div>
+        <div class="fpp-monitor-label">Service Status</div>
+        <div class="fpp-monitor-value"><?php echo h($status); ?></div>
       </div>
       <div>
         <div class="fpp-monitor-label">Agent Version</div>
-        <div><?php echo h($agentVersion); ?></div>
+        <div class="fpp-monitor-value"><?php echo h($agentVersion); ?></div>
       </div>
       <div>
         <div class="fpp-monitor-label">Architecture</div>
-        <div><?php echo h($arch); ?></div>
+        <div class="fpp-monitor-value"><?php echo h($arch); ?></div>
       </div>
       <div>
         <div class="fpp-monitor-label">Last Log Line</div>
-        <div><?php echo h($lastLog !== "" ? $lastLog : "N/A"); ?></div>
+        <div class="fpp-monitor-value"><?php echo h($lastLog !== "" ? $lastLog : "N/A"); ?></div>
       </div>
       <div>
         <div class="fpp-monitor-label">Device ID</div>
-        <div><?php echo h($deviceId !== "" ? $deviceId : "N/A"); ?></div>
+        <div class="fpp-monitor-value"><?php echo h($deviceId !== "" ? $deviceId : "N/A"); ?></div>
       </div>
       <div>
         <div class="fpp-monitor-label">Last Heartbeat</div>
-        <div><?php echo h($heartbeatTs !== "" ? $heartbeatTs : "N/A"); ?></div>
+        <div class="fpp-monitor-value"><?php echo h($heartbeatTs !== "" ? $heartbeatTs : "N/A"); ?></div>
       </div>
     </div>
   </div>
@@ -325,6 +384,7 @@ $enrollmentValue = isset($config["enrollment_token"]) ? $config["enrollment_toke
       <label class="fpp-monitor-label" for="enrollment_token">Enrollment Token</label>
       <input class="fpp-monitor-input" type="text" id="enrollment_token" name="enrollment_token" value="<?php echo h($enrollmentValue); ?>">
       <small>Leave blank to clear. Enrollment tokens are one-time use.</small>
+      <div class="fpp-monitor-meta">The agent will exchange this token for a device token on first enrollment.</div>
 
       <div class="fpp-monitor-actions" style="margin-top: 12px;">
         <button class="btn btn-primary" type="submit">Save + Restart</button>
@@ -334,14 +394,13 @@ $enrollmentValue = isset($config["enrollment_token"]) ? $config["enrollment_toke
   </div>
 
   <div class="fpp-monitor-card">
-    <h3>Debug</h3>
+    <h3>Logs</h3>
     <form method="post">
-      <button class="btn btn-secondary" type="submit" name="action" value="tail">Tail Logs</button>
+      <button class="btn btn-secondary" type="submit" name="action" value="tail">Refresh Logs</button>
     </form>
 
-    <?php if ($logs !== ""): ?>
-      <pre class="fpp-monitor-pre"><?php echo h($logs); ?></pre>
-    <?php endif; ?>
+    <pre class="fpp-monitor-pre"><?php echo h($logs !== "" ? $logs : "No log output available."); ?></pre>
+    <div class="fpp-monitor-meta">Showing latest 50 lines.</div>
   </div>
 </div>
 
