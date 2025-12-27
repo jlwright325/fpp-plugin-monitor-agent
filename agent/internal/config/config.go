@@ -18,6 +18,8 @@ type Config struct {
   ApiBaseURL             string   `json:"api_base_url"`
   HeartbeatIntervalSec   int      `json:"heartbeat_interval_sec"`
   CommandPollIntervalSec int      `json:"command_poll_interval_sec"`
+  CloudflaredToken       string   `json:"cloudflared_token"`
+  CloudflaredHostname    string   `json:"cloudflared_hostname"`
   RebootEnabled          bool     `json:"reboot_enabled"`
   RestartFPPCommand      string   `json:"restart_fpp_command"`
   UpdateChannel          string   `json:"update_channel"`
@@ -26,10 +28,7 @@ type Config struct {
 }
 
 func Load() (*Config, error) {
-  path := os.Getenv("FPP_MONITOR_AGENT_CONFIG")
-  if path == "" {
-    path = DefaultPath
-  }
+  path := ResolvePath()
 
   cfg := &Config{}
   if b, err := os.ReadFile(path); err == nil {
@@ -39,6 +38,22 @@ func Load() (*Config, error) {
   applyDefaults(cfg)
   applyEnvOverrides(cfg)
   return cfg, nil
+}
+
+func ResolvePath() string {
+  path := os.Getenv("FPP_MONITOR_AGENT_CONFIG")
+  if path == "" {
+    path = DefaultPath
+  }
+  return path
+}
+
+func Save(path string, cfg *Config) error {
+  data, err := json.MarshalIndent(cfg, "", "  ")
+  if err != nil {
+    return err
+  }
+  return os.WriteFile(path, data, 0644)
 }
 
 func applyDefaults(cfg *Config) {
@@ -60,6 +75,8 @@ func applyDefaults(cfg *Config) {
 func applyEnvOverrides(cfg *Config) {
   setString(&cfg.DeviceID, "FPP_MONITOR_AGENT_DEVICE_ID")
   setString(&cfg.DeviceToken, "FPP_MONITOR_AGENT_DEVICE_TOKEN")
+  setString(&cfg.CloudflaredToken, "FPP_MONITOR_AGENT_CLOUDFLARED_TOKEN")
+  setString(&cfg.CloudflaredHostname, "FPP_MONITOR_AGENT_CLOUDFLARED_HOSTNAME")
   setString(&cfg.RestartFPPCommand, "FPP_MONITOR_AGENT_RESTART_FPP_COMMAND")
   setString(&cfg.UpdateChannel, "FPP_MONITOR_AGENT_UPDATE_CHANNEL")
   setString(&cfg.UpdateBaseURL, "FPP_MONITOR_AGENT_UPDATE_BASE_URL")

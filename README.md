@@ -17,6 +17,8 @@ In FPP, go to **Content Setup → Plugins → ShowOps Configuration**. Set your 
 
 Config file path: `/home/fpp/media/config/fpp-monitor-agent.json`
 
+Remote sessions are provisioned automatically when requested from the ShowOps UI.
+
 ## API Base URL
 
 The agent defaults to `https://api.showops.io` internally. The plugin does not expose this in the UI or config file. For development only, override via `SHOWOPS_API_BASE_URL` in the agent environment.

@@ -115,6 +115,8 @@ func (r *Runner) runCommand(ctx context.Context, cmd Command) (Result, bool) {
     return r.restartAgent(ctx)
   case "restart_fpp":
     return r.restartFPP(ctx)
+  case "tunnel_config":
+    return r.updateTunnelConfig(ctx, cmd)
   case "reboot":
     return r.reboot(ctx)
   case "update_to_version":
@@ -124,6 +126,28 @@ func (r *Runner) runCommand(ctx context.Context, cmd Command) (Result, bool) {
   default:
     return Result{Status: "rejected", Stderr: "unknown action", ExitCode: 1}, false
   }
+}
+
+func (r *Runner) updateTunnelConfig(ctx context.Context, cmd Command) (Result, bool) {
+  token, _ := cmd.Params["cloudflared_token"].(string)
+  hostname, _ := cmd.Params["cloudflared_hostname"].(string)
+  if strings.TrimSpace(token) == "" || strings.TrimSpace(hostname) == "" {
+    return Result{Status: "rejected", Stderr: "missing tunnel fields", ExitCode: 1}, false
+  }
+
+  path := config.ResolvePath()
+  cfg, err := config.Load()
+  if err != nil {
+    return Result{Status: "error", Stderr: logging.Truncate(err.Error(), 2000), ExitCode: 1}, false
+  }
+  cfg.CloudflaredToken = token
+  cfg.CloudflaredHostname = hostname
+  if err := config.Save(path, cfg); err != nil {
+    return Result{Status: "error", Stderr: logging.Truncate(err.Error(), 2000), ExitCode: 1}, false
+  }
+  r.cfg.CloudflaredToken = token
+  r.cfg.CloudflaredHostname = hostname
+  return Result{Status: "ok", Stdout: "tunnel_config_applied", ExitCode: 0}, false
 }
 
 func (r *Runner) restartAgent(ctx context.Context) (Result, bool) {

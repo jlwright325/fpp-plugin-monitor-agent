@@ -148,6 +148,8 @@ if [[ ! -f "$CONFIG_PATH" ]]; then
     cat <<'JSON' > "$CONFIG_PATH"
 {
   "enrollment_token": "",
+  "cloudflared_token": "",
+  "cloudflared_hostname": "",
   "heartbeat_interval_sec": 10,
   "command_poll_interval_sec": 5,
   "reboot_enabled": false,
