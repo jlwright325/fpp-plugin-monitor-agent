@@ -73,7 +73,8 @@ fi
 RELEASE_BASE="${RELEASE_BASE:-https://github.com/${AGENT_REPO_OWNER}/${AGENT_REPO_NAME}/releases/download/${RESOLVED_TAG}}"
 
 platform_arch="$($ROOT_DIR/detect_platform.sh)"
-asset_name="fpp-monitor-agent-linux-${platform_arch}"
+asset_tar="fpp-monitor-agent-linux-${platform_arch}.tar.gz"
+asset_bin="fpp-monitor-agent-linux-${platform_arch}"
 checksums_name="checksums.txt"
 
 ensure_dir "$PLUGIN_DIR"
@@ -86,22 +87,33 @@ if ! is_dry_run; then
 fi
 
 tmp_dir="$(mktemp -d)"
-tmp_bin="$tmp_dir/$asset_name"
+tmp_tar="$tmp_dir/$asset_tar"
+tmp_bin="$tmp_dir/$asset_bin"
 tmp_checksums="$tmp_dir/$checksums_name"
+install_mode=""
 
 log "Downloading release assets from $RELEASE_BASE"
-log "Resolved asset URLs: $RELEASE_BASE/$asset_name and $RELEASE_BASE/$checksums_name"
+log "Resolved asset URLs: $RELEASE_BASE/$asset_tar or $RELEASE_BASE/$asset_bin and $RELEASE_BASE/$checksums_name"
 if is_dry_run; then
-  log "DRY_RUN: would download $RELEASE_BASE/$asset_name"
+  log "DRY_RUN: would download $RELEASE_BASE/$asset_tar"
+  log "DRY_RUN: would download $RELEASE_BASE/$asset_bin if tar missing"
   log "DRY_RUN: would download $RELEASE_BASE/$checksums_name"
   log "DRY_RUN: would verify checksum and install $BIN_PATH"
+  log "DRY_RUN: would install cloudflared to $INSTALL_DIR/cloudflared"
   log "DRY_RUN: would write version file to $INSTALL_DIR/VERSION"
   rm -rf "$tmp_dir"
 else
-  if ! download_file "$RELEASE_BASE/$asset_name" "$tmp_bin"; then
-    log "Failed to download $asset_name"
-    rm -rf "$tmp_dir"
-    exit 1
+  if download_file "$RELEASE_BASE/$asset_tar" "$tmp_tar"; then
+    install_mode="tar"
+  else
+    log "Tarball not found; falling back to binary download"
+    if download_file "$RELEASE_BASE/$asset_bin" "$tmp_bin"; then
+      install_mode="bin"
+    else
+      log "Failed to download $asset_tar or $asset_bin"
+      rm -rf "$tmp_dir"
+      exit 1
+    fi
   fi
   if ! download_file "$RELEASE_BASE/$checksums_name" "$tmp_checksums"; then
     log "Failed to download $checksums_name"
@@ -109,26 +121,55 @@ else
     exit 1
   fi
 
-  expected_sha="$(awk "/$asset_name/ {print \$1}" "$tmp_checksums")"
+  if [[ "$install_mode" == "tar" ]]; then
+    expected_sha="$(awk "/$asset_tar/ {print \$1}" "$tmp_checksums")"
+    asset_name="$asset_tar"
+    asset_path="$tmp_tar"
+  else
+    expected_sha="$(awk "/$asset_bin/ {print \$1}" "$tmp_checksums")"
+    asset_name="$asset_bin"
+    asset_path="$tmp_bin"
+  fi
   if [[ -z "$expected_sha" ]]; then
     log "Checksum for $asset_name not found in checksums.txt"
     rm -rf "$tmp_dir"
     exit 1
   fi
 
-  if ! actual_sha="$(sha256_file "$tmp_bin")"; then
-    log "Failed to compute sha256 for downloaded binary"
+  if ! actual_sha="$(sha256_file "$asset_path")"; then
+    log "Failed to compute sha256 for downloaded asset"
     rm -rf "$tmp_dir"
     exit 1
   fi
   if [[ "$expected_sha" != "$actual_sha" ]]; then
-    log "Checksum mismatch for downloaded binary"
+    log "Checksum mismatch for downloaded asset"
     rm -rf "$tmp_dir"
     exit 1
   fi
 
-  log "Installing binary to $BIN_PATH"
-  run_cmd_sudo install -m 0755 "$tmp_bin" "$BIN_PATH"
+  if [[ "$install_mode" == "tar" ]]; then
+    extract_dir="$tmp_dir/extract"
+    ensure_dir "$extract_dir"
+    tar -xzf "$tmp_tar" -C "$extract_dir"
+
+    if [[ ! -f "$extract_dir/fpp-monitor-agent" ]]; then
+      log "Bundle missing fpp-monitor-agent"
+      rm -rf "$tmp_dir"
+      exit 1
+    fi
+
+    log "Installing bundle to $INSTALL_DIR"
+    run_cmd_sudo install -m 0755 "$extract_dir/fpp-monitor-agent" "$BIN_PATH"
+    if [[ -f "$extract_dir/cloudflared" ]]; then
+      run_cmd_sudo install -m 0755 "$extract_dir/cloudflared" "$INSTALL_DIR/cloudflared"
+    else
+      log "cloudflared not found in bundle; remote sessions will not work until installed"
+    fi
+  else
+    log "Installing binary to $BIN_PATH"
+    run_cmd_sudo install -m 0755 "$tmp_bin" "$BIN_PATH"
+    log "cloudflared not bundled in this release; remote sessions will not work until installed"
+  fi
   run_cmd_sudo sh -c "echo \"$RESOLVED_TAG\" > \"$INSTALL_DIR/VERSION\""
 
   if can_sudo; then
