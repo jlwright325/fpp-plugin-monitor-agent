@@ -60,6 +60,8 @@ resolve_latest_tag() {
   return 1
 }
 
+ensure_tmpdir
+
 RESOLVED_TAG="$RELEASE_VERSION"
 if [[ -z "$RESOLVED_TAG" ]]; then
   RESOLVED_TAG="$(resolve_latest_tag || true)"
@@ -99,7 +101,6 @@ if ! is_dry_run; then
   ensure_dir "$INSTALL_DIR"
 fi
 
-ensure_tmpdir
 tmp_dir="$(mktemp -d)"
 tmp_tar="$tmp_dir/$asset_tar"
 tmp_bin="$tmp_dir/$asset_bin"
