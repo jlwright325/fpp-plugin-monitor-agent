@@ -10,6 +10,7 @@ CONFIG_PATH="/home/fpp/media/config/fpp-monitor-agent.json"
 INSTALL_DIR="/opt/fpp-monitor-agent"
 BIN_LINK="/usr/local/bin/fpp-monitor-agent"
 FALLBACK_SCRIPT="$PLUGIN_DIR/system/fpp-monitor-agent.sh"
+TMP_FALLBACK_DIR="/home/fpp/media/tmp"
 
 if ! can_sudo; then
   INSTALL_DIR="$PLUGIN_DIR/bin"
@@ -72,6 +73,18 @@ fi
 
 RELEASE_BASE="${RELEASE_BASE:-https://github.com/${AGENT_REPO_OWNER}/${AGENT_REPO_NAME}/releases/download/${RESOLVED_TAG}}"
 
+ensure_tmpdir() {
+  local tmp_free=""
+  if have_command df; then
+    tmp_free="$(df -Pm /tmp 2>/dev/null | awk 'NR==2 {print $4}')"
+  fi
+  if [[ -n "$tmp_free" && "$tmp_free" -lt 120 ]]; then
+    ensure_dir "$TMP_FALLBACK_DIR"
+    export TMPDIR="$TMP_FALLBACK_DIR"
+    log "Low /tmp space (${tmp_free}MB). Using TMPDIR=$TMPDIR"
+  fi
+}
+
 platform_arch="$($ROOT_DIR/detect_platform.sh)"
 asset_tar="fpp-monitor-agent-linux-${platform_arch}.tar.gz"
 asset_bin="fpp-monitor-agent-linux-${platform_arch}"
@@ -86,6 +99,7 @@ if ! is_dry_run; then
   ensure_dir "$INSTALL_DIR"
 fi
 
+ensure_tmpdir
 tmp_dir="$(mktemp -d)"
 tmp_tar="$tmp_dir/$asset_tar"
 tmp_bin="$tmp_dir/$asset_bin"
