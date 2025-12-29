@@ -60,6 +60,18 @@ resolve_latest_tag() {
   return 1
 }
 
+ensure_tmpdir() {
+  local tmp_free=""
+  if have_command df; then
+    tmp_free="$(df -Pm /tmp 2>/dev/null | awk 'NR==2 {print $4}')"
+  fi
+  if [[ -n "$tmp_free" && "$tmp_free" -lt 120 ]]; then
+    ensure_dir "$TMP_FALLBACK_DIR"
+    export TMPDIR="$TMP_FALLBACK_DIR"
+    log "Low /tmp space (${tmp_free}MB). Using TMPDIR=$TMPDIR"
+  fi
+}
+
 ensure_tmpdir
 
 RESOLVED_TAG="$RELEASE_VERSION"
@@ -74,18 +86,6 @@ if [[ -z "$RESOLVED_TAG" ]]; then
 fi
 
 RELEASE_BASE="${RELEASE_BASE:-https://github.com/${AGENT_REPO_OWNER}/${AGENT_REPO_NAME}/releases/download/${RESOLVED_TAG}}"
-
-ensure_tmpdir() {
-  local tmp_free=""
-  if have_command df; then
-    tmp_free="$(df -Pm /tmp 2>/dev/null | awk 'NR==2 {print $4}')"
-  fi
-  if [[ -n "$tmp_free" && "$tmp_free" -lt 120 ]]; then
-    ensure_dir "$TMP_FALLBACK_DIR"
-    export TMPDIR="$TMP_FALLBACK_DIR"
-    log "Low /tmp space (${tmp_free}MB). Using TMPDIR=$TMPDIR"
-  fi
-}
 
 platform_arch="$($ROOT_DIR/detect_platform.sh)"
 asset_tar="fpp-monitor-agent-linux-${platform_arch}.tar.gz"
