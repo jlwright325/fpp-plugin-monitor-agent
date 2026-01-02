@@ -203,11 +203,21 @@ if [[ ! -f "$CONFIG_PATH" ]]; then
   else
     cat <<'JSON' > "$CONFIG_PATH"
 {
+  "api_base_url": "https://api.showops.io",
   "enrollment_token": "",
+  "device_id": "",
+  "device_token": "",
+  "device_fingerprint": "",
+  "pairing_requested": false,
+  "pairing_request_id": "",
+  "pairing_code": "",
+  "pairing_expires_at": "",
+  "pairing_status": "",
+  "unpair_requested": false,
   "cloudflared_token": "",
   "cloudflared_hostname": "",
-  "heartbeat_interval_sec": 10,
-  "command_poll_interval_sec": 5,
+  "heartbeat_interval_sec": 60,
+  "command_poll_interval_sec": 30,
   "reboot_enabled": false,
   "restart_fpp_command": "systemctl restart fppd || systemctl restart fpp || service fppd restart || true"
 }

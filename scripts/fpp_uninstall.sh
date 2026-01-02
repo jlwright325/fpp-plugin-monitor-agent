@@ -58,21 +58,28 @@ elif [[ "$KEEP_CONFIG" == "1" ]]; then
   log "KEEP_CONFIG=1 set; retaining config at $CONFIG_PATH"
   log "Uninstall complete (config retained)"
 else
-  log "Clearing enrollment fields in $CONFIG_PATH"
+  log "Clearing pairing fields in $CONFIG_PATH"
   if [[ -f "$CONFIG_PATH" ]]; then
     if is_dry_run; then
-      log "DRY_RUN: would clear enrollment_token/device_id/device_token"
+      log "DRY_RUN: would clear pairing/enrollment fields"
     else
       cat <<'JSON' > "$CONFIG_PATH"
 {
   "enrollment_token": "",
   "device_id": "",
-  "device_token": ""
+  "device_token": "",
+  "device_fingerprint": "",
+  "pairing_requested": false,
+  "pairing_request_id": "",
+  "pairing_code": "",
+  "pairing_expires_at": "",
+  "pairing_status": "",
+  "unpair_requested": false
 }
 JSON
     fi
   else
     log "Config not found; nothing to clear"
   fi
-  log "Uninstall complete (enrollment cleared)"
+  log "Uninstall complete (pairing cleared)"
 fi

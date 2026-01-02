@@ -188,22 +188,43 @@ $logs = "";
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
   $action = isset($_POST["action"]) ? $_POST["action"] : "";
 
-  if ($action === "save") {
-    $enrollmentToken = trim(isset($_POST["enrollment_token"]) ? $_POST["enrollment_token"] : "");
+  if ($action === "pair") {
     if (empty($errors)) {
       $current = read_config($configPath);
       $updated = $current;
       if (isset($updated["api_base_url"])) {
         unset($updated["api_base_url"]);
       }
-      $updated["enrollment_token"] = $enrollmentToken;
+      $updated["pairing_requested"] = true;
+      $updated["pairing_request_id"] = "";
+      $updated["pairing_code"] = "";
+      $updated["pairing_expires_at"] = "";
+      $updated["pairing_status"] = "";
+      $updated["unpair_requested"] = false;
+      $updated["enrollment_token"] = "";
 
       $error = "";
       if (write_config_atomic($configPath, $updated, $error)) {
-        $messages[] = "Configuration updated.";
-        if ($enrollmentToken === "") {
-          $messages[] = "Enrollment token is empty; device will not enroll until it is set.";
-        }
+        $messages[] = "Pairing request created. Restarting agent to generate a code.";
+        restart_agent($serviceName, $fallbackScript, $messages, $errors);
+      } else {
+        $errors[] = $error;
+      }
+    }
+  } elseif ($action === "unpair") {
+    if (empty($errors)) {
+      $current = read_config($configPath);
+      $updated = $current;
+      if (isset($updated["api_base_url"])) {
+        unset($updated["api_base_url"]);
+      }
+      $updated["pairing_requested"] = false;
+      $updated["unpair_requested"] = true;
+      $updated["pairing_status"] = "UNPAIRING";
+
+      $error = "";
+      if (write_config_atomic($configPath, $updated, $error)) {
+        $messages[] = "Unpair requested. Restarting agent.";
         restart_agent($serviceName, $fallbackScript, $messages, $errors);
       } else {
         $errors[] = $error;
@@ -228,7 +249,12 @@ $enrolled = $deviceId !== "";
 $running = ($status === "active" || $status === "running");
 $logs = tail_logs($serviceName, 50);
 
-$enrollmentValue = isset($config["enrollment_token"]) ? $config["enrollment_token"] : "";
+$pairingCode = isset($config["pairing_code"]) ? $config["pairing_code"] : "";
+$pairingExpires = isset($config["pairing_expires_at"]) ? $config["pairing_expires_at"] : "";
+$pairingStatus = isset($config["pairing_status"]) ? $config["pairing_status"] : "";
+$pairingRequestId = isset($config["pairing_request_id"]) ? $config["pairing_request_id"] : "";
+$pairingRequested = !empty($config["pairing_requested"]);
+$unpairRequested = !empty($config["unpair_requested"]);
 ?>
 
 <style>
@@ -318,11 +344,35 @@ $enrollmentValue = isset($config["enrollment_token"]) ? $config["enrollment_toke
   color: #0a1117;
   font-weight: 700;
 }
-.fpp-monitor-actions .btn-secondary {
-  background: transparent;
-  border: 1px solid var(--fpp-border);
-  color: var(--fpp-text);
-}
+  .fpp-monitor-actions .btn-secondary {
+    background: transparent;
+    border: 1px solid var(--fpp-border);
+    color: var(--fpp-text);
+  }
+  .fpp-monitor-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    border: 1px solid var(--fpp-border);
+    background: rgba(15, 23, 32, 0.7);
+  }
+  .fpp-monitor-pill.success {
+    color: #38f0c8;
+    border-color: rgba(56, 240, 200, 0.4);
+  }
+  .fpp-monitor-pill.warning {
+    color: #f9a826;
+    border-color: rgba(249, 168, 38, 0.5);
+  }
+  .fpp-monitor-pill.muted {
+    color: var(--fpp-muted);
+  }
 </style>
 
 <div class="container-fluid fpp-monitor-page">
@@ -347,8 +397,8 @@ $enrollmentValue = isset($config["enrollment_token"]) ? $config["enrollment_toke
         <div class="fpp-monitor-value"><?php echo h($running ? "running" : "stopped"); ?></div>
       </div>
       <div>
-        <div class="fpp-monitor-label">Enrollment</div>
-        <div class="fpp-monitor-value"><?php echo h($enrolled ? "enrolled" : "not enrolled"); ?></div>
+        <div class="fpp-monitor-label">Pairing</div>
+        <div class="fpp-monitor-value"><?php echo h($enrolled ? "paired" : "unpaired"); ?></div>
       </div>
       <div>
         <div class="fpp-monitor-label">Service Status</div>
@@ -378,16 +428,38 @@ $enrollmentValue = isset($config["enrollment_token"]) ? $config["enrollment_toke
   </div>
 
   <div class="fpp-monitor-card">
-    <h3>Enrollment</h3>
+    <h3>Pairing</h3>
     <form method="post">
-      <input type="hidden" name="action" value="save">
-      <label class="fpp-monitor-label" for="enrollment_token">Enrollment Token</label>
-      <input class="fpp-monitor-input" type="text" id="enrollment_token" name="enrollment_token" value="<?php echo h($enrollmentValue); ?>">
-      <small>Leave blank to clear. Enrollment tokens are one-time use.</small>
-      <div class="fpp-monitor-meta">The agent will exchange this token for a device token on first enrollment.</div>
+      <div class="fpp-monitor-label">Pairing Status</div>
+      <?php if ($enrolled): ?>
+        <div class="fpp-monitor-pill success">Paired</div>
+      <?php elseif ($pairingCode !== "" || $pairingRequestId !== "" || $pairingRequested): ?>
+        <div class="fpp-monitor-pill warning"><?php echo h($pairingStatus !== "" ? $pairingStatus : "PENDING"); ?></div>
+      <?php else: ?>
+        <div class="fpp-monitor-pill muted">Unpaired</div>
+      <?php endif; ?>
+
+      <?php if ($pairingCode !== ""): ?>
+        <div style="margin-top: 12px;">
+          <div class="fpp-monitor-label">Pairing Code</div>
+          <div class="fpp-monitor-value"><?php echo h($pairingCode); ?></div>
+          <div class="fpp-monitor-meta">Expires at: <?php echo h($pairingExpires !== "" ? $pairingExpires : "unknown"); ?></div>
+        </div>
+      <?php endif; ?>
+
+      <?php if ($pairingCode === "" && !$enrolled): ?>
+        <div class="fpp-monitor-meta" style="margin-top: 8px;">
+          Click Generate Pairing Code, then enter it in ShowOps to claim this device.
+        </div>
+      <?php endif; ?>
 
       <div class="fpp-monitor-actions" style="margin-top: 12px;">
-        <button class="btn btn-primary" type="submit">Save + Restart</button>
+        <button class="btn btn-primary" type="submit" name="action" value="pair" <?php echo $enrolled ? "disabled" : ""; ?>>
+          Generate Pairing Code
+        </button>
+        <button class="btn btn-secondary" type="submit" name="action" value="unpair" <?php echo $enrolled ? "" : "disabled"; ?>>
+          Unpair / Reset
+        </button>
         <button class="btn btn-secondary" type="submit" name="action" value="restart">Restart Agent</button>
       </div>
     </form>
