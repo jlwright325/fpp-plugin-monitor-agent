@@ -19,6 +19,8 @@ fi
 
 BIN_PATH="$INSTALL_DIR/fpp-monitor-agent"
 
+# Fallback version used only when the manifest and GitHub API are both unreachable.
+# Update this whenever a new stable release ships.
 DEFAULT_RELEASE_VERSION="v0.1.27"
 RELEASE_VERSION="${RELEASE_VERSION:-}"
 AGENT_REPO_OWNER="${AGENT_REPO_OWNER:-jlwright325}"
@@ -78,8 +80,11 @@ RESOLVED_TAG="$RELEASE_VERSION"
 if [[ -z "$RESOLVED_TAG" ]]; then
   RESOLVED_TAG="$(resolve_latest_tag || true)"
   if [[ -z "$RESOLVED_TAG" ]]; then
+    log "WARNING: Could not resolve latest release tag from manifest or GitHub API."
+    log "WARNING: Falling back to hardcoded default version: $DEFAULT_RELEASE_VERSION"
+    log "WARNING: This may not be the latest release. Check network connectivity"
+    log "WARNING: or set RELEASE_VERSION explicitly to suppress this warning."
     RESOLVED_TAG="$DEFAULT_RELEASE_VERSION"
-    log "Failed to resolve latest tag; falling back to $RESOLVED_TAG"
   else
     log "Resolved latest tag: $RESOLVED_TAG"
   fi
