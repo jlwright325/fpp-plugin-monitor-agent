@@ -5,13 +5,14 @@ LOG_FILE="${FPP_MONITOR_AGENT_LOG_FILE:-/home/fpp/media/logs/fpp-monitor-agent-i
 
 log() {
   local message="[fpp-monitor-agent] $*"
-  if [[ -n "$LOG_FILE" ]]; then
+  if [[ -n "$LOG_FILE" ]] && ! is_dry_run; then
     ensure_dir "$(dirname "$LOG_FILE")"
     if have_command tee; then
       echo "$message" | tee -a "$LOG_FILE"
       return
     fi
     echo "$message" >>"$LOG_FILE" || true
+    return
   fi
   echo "$message"
 }

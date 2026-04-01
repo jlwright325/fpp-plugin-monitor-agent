@@ -97,8 +97,10 @@ asset_tar="fpp-monitor-agent-linux-${platform_arch}.tar.gz"
 asset_bin="fpp-monitor-agent-linux-${platform_arch}"
 checksums_name="checksums.txt"
 
-ensure_dir "$PLUGIN_DIR"
-ensure_dir "$(dirname "$CONFIG_PATH")"
+if ! is_dry_run; then
+  ensure_dir "$PLUGIN_DIR"
+  ensure_dir "$(dirname "$CONFIG_PATH")"
+fi
 
 log "Installing for platform: $platform_arch"
 
@@ -260,19 +262,19 @@ if is_systemd; then
         log "Systemd restart failed with exit code $restart_code"
       fi
       log "Falling back to runner"
-      ensure_dir "$PLUGIN_DIR/system"
+      run_cmd mkdir -p "$PLUGIN_DIR/system"
       run_cmd install -m 0755 "$REPO_ROOT/system/fpp-monitor-agent.sh" "$FALLBACK_SCRIPT"
       run_cmd nohup "$FALLBACK_SCRIPT" >/dev/null 2>&1 &
     fi
   else
     log "Systemd present but no sudo; using fallback runner"
-    ensure_dir "$PLUGIN_DIR/system"
+    run_cmd mkdir -p "$PLUGIN_DIR/system"
     run_cmd install -m 0755 "$REPO_ROOT/system/fpp-monitor-agent.sh" "$FALLBACK_SCRIPT"
     run_cmd nohup "$FALLBACK_SCRIPT" >/dev/null 2>&1 &
   fi
 else
   log "Systemd not detected; installing fallback runner"
-  ensure_dir "$PLUGIN_DIR/system"
+  run_cmd mkdir -p "$PLUGIN_DIR/system"
   run_cmd install -m 0755 "$REPO_ROOT/system/fpp-monitor-agent.sh" "$FALLBACK_SCRIPT"
   run_cmd nohup "$FALLBACK_SCRIPT" >/dev/null 2>&1 &
   if have_command crontab; then
