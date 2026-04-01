@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  shellcheck:
+    name: ShellCheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run ShellCheck
+        uses: ludeeus/action-shellcheck@master
+        with:
+          scandir: "./scripts"
+          severity: warning
+
+      - name: ShellCheck system scripts
+        uses: ludeeus/action-shellcheck@master
+        with:
+          scandir: "./system"
+          severity: warning
+
+  dry-run-install:
+    name: Dry-Run Install
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Smoke test — dry-run install (no sudo path)
+        run: |
+          DRY_RUN=1 bash scripts/fpp_install.sh
+        env:
+          DRY_RUN: "1"
+
+      - name: Smoke test — dry-run install (explicit version)
+        run: |
+          DRY_RUN=1 RELEASE_VERSION=v0.1.27 bash scripts/fpp_install.sh
+        env:
+          DRY_RUN: "1"
+          RELEASE_VERSION: "v0.1.27"
+
+      - name: Smoke test — detect_platform.sh runs without error
+        run: bash scripts/detect_platform.sh
+
+  validate-json:
+    name: Validate JSON
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate pluginInfo.json
+        run: python3 -m json.tool pluginInfo.json > /dev/null
