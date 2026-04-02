@@ -4,6 +4,8 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$ROOT_DIR/install_common.sh"
 
+log_install_session_start "uninstall"
+
 PLUGIN_DIR="/home/fpp/media/plugins/showops-agent"
 LEGACY_PLUGIN_DIR="/home/fpp/media/plugins/fpp-monitor-agent"
 BIN_LINK="/usr/local/bin/fpp-monitor-agent"
@@ -58,25 +60,45 @@ elif [[ "$KEEP_CONFIG" == "1" ]]; then
   log "KEEP_CONFIG=1 set; retaining config at $CONFIG_PATH"
   log "Uninstall complete (config retained)"
 else
-  log "Clearing pairing fields in $CONFIG_PATH"
+  log "Clearing pairing fields in $CONFIG_PATH (preserving api_base_url, intervals, and other tunables)"
   if [[ -f "$CONFIG_PATH" ]]; then
     if is_dry_run; then
-      log "DRY_RUN: would clear pairing/enrollment fields"
-    else
-      cat <<'JSON' > "$CONFIG_PATH"
-{
-  "enrollment_token": "",
-  "device_id": "",
-  "device_token": "",
-  "device_fingerprint": "",
-  "pairing_requested": false,
-  "pairing_request_id": "",
-  "pairing_code": "",
-  "pairing_expires_at": "",
-  "pairing_status": "",
-  "unpair_requested": false
+      log "DRY_RUN: would merge-clear pairing/enrollment fields via JSON merge"
+    elif ! have_command python3; then
+      log "python3 not found; cannot safely update $CONFIG_PATH. Pairing fields not cleared."
+    elif ! CONFIG_PATH="$CONFIG_PATH" python3 <<'PY'
+import json
+import os
+import sys
+
+path = os.environ["CONFIG_PATH"]
+keys = {
+    "enrollment_token": "",
+    "device_id": "",
+    "device_token": "",
+    "device_fingerprint": "",
+    "pairing_requested": False,
+    "pairing_request_id": "",
+    "pairing_code": "",
+    "pairing_expires_at": "",
+    "pairing_status": "",
+    "unpair_requested": False,
 }
-JSON
+
+with open(path, "r", encoding="utf-8") as handle:
+    data = json.load(handle)
+if not isinstance(data, dict):
+    sys.exit("config root must be an object")
+for key, value in keys.items():
+    data[key] = value
+tmp = path + ".tmp"
+with open(tmp, "w", encoding="utf-8") as handle:
+    json.dump(data, handle, indent=2)
+    handle.write("\n")
+os.replace(tmp, path)
+PY
+    then
+      log "Failed to merge-clear pairing fields in $CONFIG_PATH (invalid JSON or permission); file unchanged"
     fi
   else
     log "Config not found; nothing to clear"

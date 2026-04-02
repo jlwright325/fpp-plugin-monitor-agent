@@ -11,25 +11,34 @@ jobs:
     name: ShellCheck
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
 
       - name: Run ShellCheck
-        uses: ludeeus/action-shellcheck@master
+        uses: ludeeus/action-shellcheck@00cae500b08a931fb5698e11e79bfbd38e612a38 # v2.0.0
         with:
           scandir: "./scripts"
           severity: warning
 
       - name: ShellCheck system scripts
-        uses: ludeeus/action-shellcheck@master
+        uses: ludeeus/action-shellcheck@00cae500b08a931fb5698e11e79bfbd38e612a38 # v2.0.0
         with:
           scandir: "./system"
           severity: warning
+
+  plugin-contract:
+    name: Plugin API contract
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+
+      - name: Verify frozen paths and plugin UI surface
+        run: bash scripts/verify_plugin_contract.sh
 
   dry-run-install:
     name: Dry-Run Install
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
 
       - name: Smoke test — dry-run install (no sudo path)
         run: |
@@ -47,11 +56,22 @@ jobs:
       - name: Smoke test — detect_platform.sh runs without error
         run: bash scripts/detect_platform.sh
 
+  dry-run-uninstall:
+    name: Dry-Run Uninstall
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+
+      - name: Smoke test — dry-run uninstall
+        run: DRY_RUN=1 bash scripts/fpp_uninstall.sh
+        env:
+          DRY_RUN: "1"
+
   validate-json:
     name: Validate JSON
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
 
       - name: Validate pluginInfo.json
         run: python3 -m json.tool pluginInfo.json > /dev/null

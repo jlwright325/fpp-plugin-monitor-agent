@@ -79,6 +79,33 @@ is_dry_run() {
   [[ "${DRY_RUN:-0}" == "1" ]]
 }
 
+generate_install_run_id() {
+  if [[ -r /proc/sys/kernel/random/uuid ]]; then
+    cat /proc/sys/kernel/random/uuid
+    return 0
+  fi
+  if have_command uuidgen; then
+    uuidgen
+    return 0
+  fi
+  if have_command openssl; then
+    printf 'inst-%s-%s\n' "$(date -u +%Y%m%dT%H%M%SZ)" "$(openssl rand -hex 8)"
+    return 0
+  fi
+  printf 'inst-%s-%s\n' "$(date -u +%Y%m%dT%H%M%SZ)" "$$"
+}
+
+# One ID per install/uninstall invocation for install logs and field support (correlate with support tickets).
+log_install_session_start() {
+  local action="$1"
+  if [[ -z "${FPP_MONITOR_INSTALL_RUN_ID:-}" ]]; then
+    local rid
+    rid="$(generate_install_run_id)"
+    export FPP_MONITOR_INSTALL_RUN_ID="${rid}"
+  fi
+  log "${action} begin install_run_id=${FPP_MONITOR_INSTALL_RUN_ID}"
+}
+
 run_cmd() {
   if is_dry_run; then
     log "DRY_RUN: $*"
