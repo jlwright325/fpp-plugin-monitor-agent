@@ -242,5 +242,6 @@ GitHub Actions runs on every push and PR:
 - **ShellCheck** — lints all shell scripts in `scripts/` and `system/`
 - **Dry-run install** — validates the installer runs without error in dry-run mode
 - **JSON validation** — validates `pluginInfo.json`
+- **PHP syntax** — `php -l` on `www/showops.php` (FPP plugin UI; catches syntax errors before deploy)
 
 See [`.github/workflows/ci.yml`](.github/workflows/ci.yml). 
