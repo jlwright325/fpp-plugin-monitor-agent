@@ -10,7 +10,6 @@ PLUGIN_DIR="/home/fpp/media/plugins/showops-agent"
 LEGACY_PLUGIN_DIR="/home/fpp/media/plugins/fpp-monitor-agent"
 BIN_LINK="/usr/local/bin/fpp-monitor-agent"
 INSTALL_DIR="/opt/fpp-monitor-agent"
-BIN_PATH_SYSTEM="$INSTALL_DIR/fpp-monitor-agent"
 BIN_PATH_PLUGIN="$PLUGIN_DIR/bin/fpp-monitor-agent"
 FALLBACK_SCRIPT="$PLUGIN_DIR/system/fpp-monitor-agent.sh"
 CONFIG_PATH="/home/fpp/media/config/fpp-monitor-agent.json"
@@ -30,10 +29,11 @@ fi
 
 if can_sudo; then
   run_cmd sudo rm -f "$BIN_LINK"
-  run_cmd sudo rm -f "$BIN_PATH_SYSTEM"
-  run_cmd sudo rmdir "$INSTALL_DIR" 2>/dev/null || true
+  # Remove the full install prefix so cloudflared, VERSION, and future bundle
+  # files do not linger after uninstall (stale paths confuse remote support).
+  run_cmd sudo rm -rf "$INSTALL_DIR"
 else
-  log "No sudo; cannot remove $BIN_PATH_SYSTEM or $BIN_LINK"
+  log "No sudo; cannot remove $INSTALL_DIR or $BIN_LINK"
 fi
 
 run_cmd rm -f "$BIN_PATH_PLUGIN" || true

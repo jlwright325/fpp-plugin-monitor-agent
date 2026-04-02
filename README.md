@@ -174,6 +174,8 @@ chmod +x /opt/fpp-monitor-agent/cloudflared
 bash /home/fpp/media/plugins/showops-agent/scripts/fpp_uninstall.sh
 ```
 
+When **sudo** is available, the script removes the entire install directory (`/opt/fpp-monitor-agent`), including the agent binary, bundled `cloudflared`, and the `VERSION` file, so nothing stale is left for support to misread after an uninstall.
+
 To preserve the config file (device pairing state, tokens) during uninstall:
 
 ```bash
