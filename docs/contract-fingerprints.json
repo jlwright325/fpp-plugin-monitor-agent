@@ -1,5 +1,5 @@
 {
-  "contractVersion": "1.1.0",
+  "contractVersion": "1.2.0",
   "description": "Machine-readable checks for docs/PLUGIN_API_CONTRACT.md. CI fails if plugin paths or UI POST actions drift without updating the contract.",
   "frozenPaths": {
     "userConfigFile": "/home/fpp/media/config/fpp-monitor-agent.json",
@@ -26,7 +26,23 @@
       "mustContain": [
         "/home/fpp/media/plugins/showops-agent",
         "/home/fpp/media/config/fpp-monitor-agent.json",
-        "fpp-monitor-agent.service"
+        "fpp-monitor-agent.service",
+        "log_install_session_start"
+      ]
+    },
+    {
+      "file": "scripts/install_common.sh",
+      "mustContain": [
+        "FPP_MONITOR_INSTALL_RUN_ID",
+        "install_run_id="
+      ]
+    },
+    {
+      "file": "scripts/fpp_uninstall.sh",
+      "mustContain": [
+        "log_install_session_start",
+        "merge-clear pairing",
+        "json.load"
       ]
     },
     {

@@ -28,7 +28,7 @@ The plugin provides:
 - **Device pairing** — one-time enrollment flow to associate the device with a ShowOps account
 - **Remote sessions** — optional cloudflared-based tunnel for secure remote access
 
-**Integration contract (engineers):** [docs/plugin-contract.md](docs/plugin-contract.md) — paths, config merge rules, install correlation ID, and binary/release expectations.
+**Integration contract (engineers):** [docs/PLUGIN_API_CONTRACT.md](docs/PLUGIN_API_CONTRACT.md) — paths, config merge rules, install correlation ID, verifier fingerprints, and agent boundary.
 
 Architecture:
 
@@ -255,6 +255,7 @@ GitHub Actions runs on every push and PR:
 - **ShellCheck** — lints all shell scripts in `scripts/` and `system/`
 - **Plugin API contract** — asserts frozen paths and FPP UI POST actions match `docs/contract-fingerprints.json`
 - **Dry-run install** — validates the installer runs without error in dry-run mode
+- **Dry-run uninstall** — validates the uninstaller runs without error in dry-run mode
 - **JSON validation** — validates `pluginInfo.json`
 
 Workflows use **pinned third-party Actions (commit SHA)** for supply-chain stability. See [`.github/workflows/ci.yml`](.github/workflows/ci.yml).

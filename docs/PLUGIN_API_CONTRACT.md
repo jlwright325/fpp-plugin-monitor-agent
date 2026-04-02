@@ -1,6 +1,6 @@
 # FPP ShowOps monitor plugin — integration contract
 
-**Version:** 1.1.0  
+**Version:** 1.2.0  
 **Slice:** #2 — follows monitor-agent plugin slice #1; scaling and deferral notes live in company issue **SHO-253**.  
 **Status:** Frozen interfaces below are covered by CI (`scripts/verify_plugin_contract.sh`).
 
@@ -22,6 +22,11 @@ Breaking changes to paths, config semantics, or plugin UI actions require **bump
 | Agent binary (privileged install) | `/opt/fpp-monitor-agent/fpp-monitor-agent` | Installer when `sudo` available |
 | Fallback wrapper | `{plugin root}/system/fpp-monitor-agent.sh` | Invoked by systemd unit or manual fallback |
 | Systemd unit | `fpp-monitor-agent.service` (file under `/etc/systemd/system/` or `/lib/systemd/system/`) | Installer |
+| Agent binary (no sudo) | `{plugin root}/bin/fpp-monitor-agent` | Installer fallback layout |
+| Release tag file | `/opt/fpp-monitor-agent/VERSION` or `{plugin root}/bin/VERSION` | Installer |
+| Install log | `/home/fpp/media/logs/fpp-monitor-agent-install.log` | Installer / uninstaller (append) |
+
+Legacy path `/home/fpp/media/plugins/fpp-monitor-agent` may still appear on upgraded systems; `fpp_uninstall.sh` removes artifacts there when present.
 
 ---
 
@@ -39,6 +44,27 @@ The **authoritative field list** for operators is in the root [README](../README
 | `api_base_url` | Cleared during pair/unpair (agent re-resolves) |
 
 **Encoding:** UTF-8 JSON object. Pretty-print is optional.
+
+**Install / reinstall:** The installer writes the **full** default schema on first install and must **never** overwrite an existing file on reinstall.
+
+### Uninstall default (pairing reset)
+
+When uninstall runs with **neither** `PURGE=1` **nor** `KEEP_CONFIG=1`, it clears enrollment and pairing keys by **merging** into the existing JSON object. Operator-tuned fields (`api_base_url`, `heartbeat_interval_sec`, `command_poll_interval_sec`, `restart_fpp_command`, `reboot_enabled`, tunnel fields, etc.) must survive so a reinstall does not silently revert cloud endpoints or intervals.
+
+Keys reset on that merge-clear path:
+
+- `enrollment_token`, `device_id`, `device_token`, `device_fingerprint`
+- `pairing_requested`, `pairing_request_id`, `pairing_code`, `pairing_expires_at`, `pairing_status`, `unpair_requested`
+
+`PURGE=1` deletes the config file. `KEEP_CONFIG=1` skips pairing clears entirely.
+
+### Install / uninstall session correlation
+
+Each `fpp_install.sh` and `fpp_uninstall.sh` invocation logs a line early in the run:
+
+`[fpp-monitor-agent] <install|uninstall> begin install_run_id=<id>`
+
+Environment variable **`FPP_MONITOR_INSTALL_RUN_ID`** is exported for the script lifetime (tests may preset it). Operators can grep `install_run_id` in `/home/fpp/media/logs/fpp-monitor-agent-install.log` when opening support tickets. Outbound HTTP correlation for the Go agent remains separate (see §4).
 
 ---
 
@@ -90,10 +116,34 @@ Aligned with architect checkpoint **SHO-253** — targets for product/ops, not a
 
 ---
 
-## 7. CI contract verification
+## 7. Agent release tarball (binary contract)
+
+The plugin downloads release assets from [fpp-agent-monitor](https://github.com/jlwright325/fpp-agent-monitor). The tarball must contain:
+
+- `fpp-monitor-agent` (executable)
+- Optional `cloudflared` (executable) for remote sessions
+
+Checksum verification uses `checksums.txt` from the same release. **Do not** change asset naming without updating `scripts/fpp_install.sh` and this document.
+
+---
+
+## 8. PHP plugin UI and config merges
+
+The UI reads the same config path and expects JSON objects as produced by the installer. Pairing actions must preserve operator-tuned fields (same merge discipline as uninstall).
+
+---
+
+## 9. CI contract verification
 
 `scripts/verify_plugin_contract.sh` reads `docs/contract-fingerprints.json` and fails if frozen paths or POST actions drift. Run locally:
 
 ```bash
 bash scripts/verify_plugin_contract.sh
 ```
+
+---
+
+## References
+
+- Operator-facing install notes: [README.md](../README.md)
+- Next-slice risk context: company issue **SHO-253**
