@@ -99,7 +99,9 @@ generate_install_run_id() {
 log_install_session_start() {
   local action="$1"
   if [[ -z "${FPP_MONITOR_INSTALL_RUN_ID:-}" ]]; then
-    export FPP_MONITOR_INSTALL_RUN_ID="$(generate_install_run_id)"
+    local rid
+    rid="$(generate_install_run_id)"
+    export FPP_MONITOR_INSTALL_RUN_ID="${rid}"
   fi
   log "${action} begin install_run_id=${FPP_MONITOR_INSTALL_RUN_ID}"
 }
