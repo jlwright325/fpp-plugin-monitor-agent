@@ -1,0 +1,51 @@
+{
+  "contractVersion": "1.1.0",
+  "description": "Machine-readable checks for docs/PLUGIN_API_CONTRACT.md. CI fails if plugin paths or UI POST actions drift without updating the contract.",
+  "frozenPaths": {
+    "userConfigFile": "/home/fpp/media/config/fpp-monitor-agent.json",
+    "pluginInstallDir": "/home/fpp/media/plugins/showops-agent",
+    "systemdUnitFileName": "fpp-monitor-agent.service",
+    "optAgentBinary": "/opt/fpp-monitor-agent/fpp-monitor-agent"
+  },
+  "pluginUiPostActions": ["pair", "unpair", "restart", "tail"],
+  "fileAssertions": [
+    {
+      "file": "www/showops.php",
+      "mustContain": [
+        "/home/fpp/media/config/fpp-monitor-agent.json",
+        "/home/fpp/media/plugins/showops-agent",
+        "fpp-monitor-agent.service",
+        "action === \"pair\"",
+        "action === \"unpair\"",
+        "action === \"restart\"",
+        "action === \"tail\""
+      ]
+    },
+    {
+      "file": "scripts/fpp_install.sh",
+      "mustContain": [
+        "/home/fpp/media/plugins/showops-agent",
+        "/home/fpp/media/config/fpp-monitor-agent.json",
+        "fpp-monitor-agent.service"
+      ]
+    },
+    {
+      "file": "system/fpp-monitor-agent.sh",
+      "mustContain": [
+        "/home/fpp/media/config/fpp-monitor-agent.json",
+        "/opt/fpp-monitor-agent/fpp-monitor-agent"
+      ]
+    },
+    {
+      "file": "system/fpp-monitor-agent.service",
+      "mustContain": [
+        "fpp-monitor-agent",
+        "/home/fpp/media/config/fpp-monitor-agent.json"
+      ]
+    },
+    {
+      "file": "menu.inc",
+      "mustContain": ["showops.php"]
+    }
+  ]
+}

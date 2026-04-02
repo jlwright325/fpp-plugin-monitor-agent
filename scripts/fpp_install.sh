@@ -5,6 +5,8 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$ROOT_DIR/.." && pwd)"
 . "$ROOT_DIR/install_common.sh"
 
+log_install_session_start "install"
+
 PLUGIN_DIR="/home/fpp/media/plugins/showops-agent"
 CONFIG_PATH="/home/fpp/media/config/fpp-monitor-agent.json"
 INSTALL_DIR="/opt/fpp-monitor-agent"
