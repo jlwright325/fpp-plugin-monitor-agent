@@ -9,9 +9,7 @@ Use these **exact** check names when requiring checks for `main` (verify on a re
 | Check name | Workflow | Notes |
 | --- | --- | --- |
 | `ShellCheck` | [CI](.github/workflows/ci.yml) | `scripts/` + `system/` |
-| `Plugin API contract` | [CI](.github/workflows/ci.yml) | Frozen paths / plugin UI surface |
 | `Dry-Run Install` | [CI](.github/workflows/ci.yml) | Install script smoke |
-| `Dry-Run Uninstall` | [CI](.github/workflows/ci.yml) | Uninstall script smoke |
 | `Validate JSON` | [CI](.github/workflows/ci.yml) | `pluginInfo.json` |
 
 Enable **Require branches to be up to date before merging** (strict).
