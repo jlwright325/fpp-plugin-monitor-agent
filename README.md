@@ -257,6 +257,7 @@ GitHub Actions runs on every push and PR:
 - **Dry-run install** — validates the installer runs without error in dry-run mode
 - **Dry-run uninstall** — validates the uninstaller runs without error in dry-run mode
 - **JSON validation** — validates `pluginInfo.json`
+- **PHP syntax** — `php -l` on `www/showops.php` (FPP plugin UI; catches syntax errors before deploy)
 
 Workflows use **pinned third-party Actions (commit SHA)** for supply-chain stability. See [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
 
