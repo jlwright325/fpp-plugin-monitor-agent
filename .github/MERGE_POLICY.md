@@ -8,8 +8,10 @@ Use these **exact** check names when requiring checks for `main` (verify on a re
 
 | Check name | Workflow | Notes |
 | --- | --- | --- |
-| `ShellCheck` | [CI](.github/workflows/ci.yml) | `scripts/` + `system/` |
-| `Dry-Run Install` | [CI](.github/workflows/ci.yml) | Install script smoke |
+| `ShellCheck` | [CI](.github/workflows/ci.yml) | Scripts under `scripts/` and `system/` |
+| `Plugin API contract` | [CI](.github/workflows/ci.yml) | Frozen paths / plugin UI surface |
+| `Dry-Run Install` | [CI](.github/workflows/ci.yml) | Install script smoke (dry-run) |
+| `Dry-Run Uninstall` | [CI](.github/workflows/ci.yml) | Uninstall script smoke (dry-run) |
 | `Validate JSON` | [CI](.github/workflows/ci.yml) | `pluginInfo.json` |
 
 Enable **Require branches to be up to date before merging** (strict).
@@ -18,8 +20,8 @@ Enable **Require branches to be up to date before merging** (strict).
 
 1. **Settings → General → Pull Requests** → enable **Allow auto-merge**.
 2. Protect `main` with the required checks above.
-3. Add the **`automerge`** label so the PR merges automatically after checks pass.
-4. [Enable auto-merge](.github/workflows/enable-automerge.yml) uses squash merge via GitHub’s API.
+3. Create the **`automerge`** label (if missing) and add it to a PR when it should merge automatically after checks pass.
+4. [Enable auto-merge](.github/workflows/enable-automerge.yml) uses squash merge via GitHub’s API. The PR merges only when all required checks succeed.
 
 **QA alignment:** Co-own which checks are blocking vs informational; update this table when workflows change.
 
