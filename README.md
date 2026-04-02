@@ -15,6 +15,7 @@ Lightweight outbound-only ShowOps monitoring agent for Falcon Player (FPP). The 
 - [Uninstallation](#uninstallation)
 - [Troubleshooting](#troubleshooting)
 - [Development](#development)
+- [Plugin API contract](#plugin-api-contract)
 
 ---
 
@@ -26,6 +27,8 @@ The plugin provides:
 - **Command polling** — device polls for and executes allowlisted management commands
 - **Device pairing** — one-time enrollment flow to associate the device with a ShowOps account
 - **Remote sessions** — optional cloudflared-based tunnel for secure remote access
+
+**Integration contract (engineers):** [docs/plugin-contract.md](docs/plugin-contract.md) — paths, config merge rules, install correlation ID, and binary/release expectations.
 
 Architecture:
 
@@ -87,6 +90,8 @@ The installer will:
 | `RELEASE_BASE` | _(derived)_ | Override full release asset base URL |
 | `DRY_RUN` | `0` | Set to `1` to print actions without executing them |
 
+**`DRY_RUN` contract:** When `DRY_RUN=1`, the installer must not create directories under `/home/fpp`, write install logs to FPP media paths, or mutate the live system. CI runs `DRY_RUN=1 bash scripts/fpp_install.sh` on every PR; any new filesystem side effects must be guarded with `is_dry_run` (see `scripts/install_common.sh`).
+
 ---
 
 ## Configuration
@@ -106,6 +111,7 @@ The config file is located at `/home/fpp/media/config/fpp-monitor-agent.json`. I
   "pairing_expires_at": "",
   "pairing_status": "",
   "unpair_requested": false,
+  "last_heartbeat_ts": "",
   "cloudflared_token": "",
   "cloudflared_hostname": "",
   "heartbeat_interval_sec": 60,
@@ -125,6 +131,7 @@ The config file is located at `/home/fpp/media/config/fpp-monitor-agent.json`. I
 | `pairing_code` | Short code displayed during pairing. Read-only — set by agent. |
 | `pairing_expires_at` | ISO timestamp when the pairing code expires. Read-only. |
 | `pairing_status` | Current pairing state (`pending`, `approved`, `denied`). Read-only. |
+| `last_heartbeat_ts` | Last successful heartbeat timestamp (agent-written; shown in FPP plugin UI). |
 | `cloudflared_token` | Tunnel token for remote session support. Set by agent after enrollment. |
 | `cloudflared_hostname` | Tunnel hostname. Set by agent. |
 | `heartbeat_interval_sec` | How often (seconds) the agent sends a heartbeat to the API. |
@@ -137,12 +144,12 @@ The config file is located at `/home/fpp/media/config/fpp-monitor-agent.json`. I
 ## Pairing a Device
 
 1. In FPP, navigate to **Plugins → ShowOps Configuration**.
-2. Click **Request Pairing**.
+2. Click **Generate Pairing Code**.
 3. A 6-character pairing code will appear. Enter it in the ShowOps dashboard under **Devices → Add Device**.
 4. The page will update automatically once the pairing is approved.
 5. The agent will begin sending heartbeats within one polling cycle.
 
-If pairing fails or expires, click **Request Pairing** again to generate a new code.
+If pairing fails or expires, click **Generate Pairing Code** again.
 
 ---
 
@@ -189,7 +196,7 @@ systemctl status fpp-monitor-agent.service
 # systemd journal
 journalctl -u fpp-monitor-agent.service -n 100 --no-pager
 
-# Install log
+# Install log (includes install_run_id per run — share with support)
 cat /home/fpp/media/logs/fpp-monitor-agent-install.log
 ```
 
@@ -229,6 +236,12 @@ RELEASE_VERSION=v0.1.27 bash scripts/fpp_install.sh
 DRY_RUN=1 bash scripts/fpp_install.sh
 ```
 
+### Plugin API contract check
+
+```bash
+bash scripts/verify_plugin_contract.sh
+```
+
 ### Linting shell scripts
 
 ```bash
@@ -240,7 +253,17 @@ shellcheck scripts/*.sh system/*.sh
 GitHub Actions runs on every push and PR:
 
 - **ShellCheck** — lints all shell scripts in `scripts/` and `system/`
+- **Plugin API contract** — asserts frozen paths and FPP UI POST actions match `docs/contract-fingerprints.json`
 - **Dry-run install** — validates the installer runs without error in dry-run mode
 - **JSON validation** — validates `pluginInfo.json`
 
-See [`.github/workflows/ci.yml`](.github/workflows/ci.yml). 
+Workflows use **pinned third-party Actions (commit SHA)** for supply-chain stability. See [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
+
+---
+
+## Plugin API contract
+
+Versioned integration boundary between this FPP plugin and the Go agent ([fpp-agent-monitor](https://github.com/jlwright325/fpp-agent-monitor)): paths, config keys used by `www/showops.php`, POST actions, correlation header guidance for outbound HTTP, and informal SLO notes.
+
+- **Human-readable:** [`docs/PLUGIN_API_CONTRACT.md`](docs/PLUGIN_API_CONTRACT.md)
+- **CI fingerprints:** [`docs/contract-fingerprints.json`](docs/contract-fingerprints.json) 
