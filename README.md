@@ -243,4 +243,4 @@ GitHub Actions runs on every push and PR:
 - **Dry-run install** — validates the installer runs without error in dry-run mode
 - **JSON validation** — validates `pluginInfo.json`
 
-See [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
+See [`.github/workflows/ci.yml`](.github/workflows/ci.yml). 
