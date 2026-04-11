@@ -1,0 +1,28 @@
+repo: fpp-plugin-monitor-agent
+
+purpose: FPP plugin wrapper that installs/configures the Go agent, exposes plugin UI, and handles FPP-specific integration and lifecycle scripting.
+
+domains_owned:
+  - fpp_plugin_integration
+  - enrollment
+
+capabilities_owned:
+  - install_fpp_agent
+  - uninstall_fpp_agent
+  - render_plugin_ui
+  - write_default_agent_config
+  - trigger_pairing_request
+
+contracts:
+  consumes:
+    - plugin_api_contract_v1
+    - agent_config_schema_v1
+  publishes:
+    - plugin_install_contract_v1
+
+likely_paths:
+  - scripts
+  - system
+  - www
+  - docs/PLUGIN_API_CONTRACT.md
+  - pluginInfo.json
